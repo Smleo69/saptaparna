@@ -1,0 +1,9 @@
+Put your final photos in this folder.
+
+Example:
+photo-1.jpg
+photo-2.jpg
+photo-3.jpg
+
+Then edit github-pages/index.html and use paths like:
+assets/photos/photo-1.jpg

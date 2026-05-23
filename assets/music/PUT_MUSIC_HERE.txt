@@ -1,0 +1,4 @@
+Put final music files in this folder if you want the hosted page to include songs.
+
+Example path in github-pages/index.html:
+assets/music/song-1.mp3
