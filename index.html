@@ -2320,7 +2320,7 @@ function getPublicUrl(bucket, path) {
 function showDataError(context, error, notify = true) {
   if (!error) return;
   console.error(`${context}:`, error);
-  if (notify) showAdminToast(`${context} failed. Check Supabase setup.`);
+  if (notify) showAdminToast(`${context} failed: ${error.message || 'Check Supabase setup.'}`);
 }
 
 async function loadSiteData() {
@@ -2981,10 +2981,13 @@ async function saveGalleryImage() {
 
   const insert = await supabaseClient.from('gallery_items').insert({
     image_path: path,
-    caption,
-    sort_order: -Date.now()
+    caption
   }).select().single();
-  if (insert.error) { showDataError('Photo save', insert.error); return; }
+  if (insert.error) {
+    await supabaseClient.storage.from('memories').remove([path]);
+    showDataError('Photo save', insert.error);
+    return;
+  }
 
   galleryData.unshift({
     id: insert.data.id,
