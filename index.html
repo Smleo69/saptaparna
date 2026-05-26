@@ -226,6 +226,18 @@
        ① HERO
     ════════════════════════════════ */
     #hero {
+      height: 145vh;
+      min-height: calc(600px + 45vh);
+      padding: 0;
+      background: var(--deep);
+      overflow: visible;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-stage {
+      position: sticky;
+      top: 0;
       height: 100vh;
       min-height: 600px;
       display: flex;
@@ -235,7 +247,10 @@
       padding: 0 8% 0 8%;
       background: var(--deep);
       overflow: hidden;
-      position: relative;
+      transform: translate3d(0, var(--hero-lift, 0px), 0) scale(var(--hero-zoom, 1));
+      transform-origin: center center;
+      opacity: var(--hero-stage-opacity, 1);
+      will-change: transform, opacity;
     }
 
     #hero canvas {
@@ -396,6 +411,13 @@
                   transform 1.4s cubic-bezier(.16,1,.3,1) 0.6s;
     }
     .hero-inner.revealed { opacity: 1; transform: translateX(0); }
+    .hero-stage .hero-inner.revealed {
+      opacity: var(--hero-copy-opacity, 1);
+      transform: translate3d(0, var(--hero-copy-y, 0px), 0);
+    }
+    #hero.scroll-ready .hero-inner.revealed {
+      transition: none;
+    }
 
     .hero-eyebrow {
       font-family: 'Lato', sans-serif;
@@ -1918,7 +1940,7 @@
     /* ════════ RESPONSIVE ════════ */
     @media (max-width: 768px) {
       section { padding: 80px 5%; }
-      #hero { align-items: center; text-align: center; padding: 0 6%; }
+      .hero-stage { align-items: center; text-align: center; padding: 0 6%; }
       .hero-portrait { opacity: 0.75 !important; }
       .hero-portrait-fade { background: linear-gradient(180deg, rgba(4,8,16,0.5) 0%, rgba(4,8,16,0.20) 40%, rgba(4,8,16,0.60) 100%); }
       .hero-title { font-size: clamp(3rem, 14vw, 5rem); }
@@ -1955,6 +1977,18 @@
       .gallery-archive-grid { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
+      #hero {
+        height: 100vh;
+        min-height: 600px;
+      }
+      .hero-stage {
+        transform: none;
+        opacity: 1;
+      }
+      .hero-stage .hero-inner.revealed {
+        opacity: 1;
+        transform: translateX(0);
+      }
       .footer-leaf {
         animation: none;
       }
@@ -1990,29 +2024,32 @@
 
 <!-- ① HERO -->
 <section id="hero">
-  <canvas id="rain-canvas"></canvas>
-  <img class="hero-portrait" id="hero-portrait" src="assets/photos/hero-portrait.webp" alt="Hero Portrait">
-  <div class="hero-portrait-fade"></div>
-  <div class="hero-vignette"></div>
-  <div class="hero-accent-line"></div>
-  <div class="hero-fog">
-    <div class="fog-layer" style="--fd:22s;"></div>
-    <div class="fog-layer" style="--fd:16s;"></div>
-  </div>
+  <div class="hero-stage" id="hero-stage">
+    <canvas id="rain-canvas"></canvas>
+    <img class="hero-portrait" id="hero-portrait" src="assets/photos/hero-portrait.webp" alt="Hero Portrait">
+    <div class="hero-portrait-fade"></div>
+    <div class="hero-vignette"></div>
+    <div class="hero-accent-line"></div>
+    <div class="hero-fog">
+      <div class="fog-layer" style="--fd:22s;"></div>
+      <div class="fog-layer" style="--fd:16s;"></div>
+    </div>
 
-  <div class="hero-floating" style="top:15%;left:3%;--dur:9s;--delay:0s;">✦</div>
-  <div class="hero-floating" style="top:35%;left:6%;--dur:11s;--delay:1.5s;">✧</div>
-  <div class="hero-floating" style="top:65%;left:2%;--dur:8s;--delay:2s;">✧</div>
-  <div class="hero-floating" style="top:80%;left:5%;--dur:10s;--delay:0.5s;">◇</div>
-  <div class="hero-floating" style="top:50%;left:1%;--dur:12s;--delay:3s;">✦</div>
-  <div class="hero-particles" id="hero-particles"></div>
+    <div class="hero-floating" style="top:15%;left:3%;--dur:9s;--delay:0s;">✦</div>
+    <div class="hero-floating" style="top:35%;left:6%;--dur:11s;--delay:1.5s;">✧</div>
+    <div class="hero-floating" style="top:65%;left:2%;--dur:8s;--delay:2s;">✧</div>
+    <div class="hero-floating" style="top:80%;left:5%;--dur:10s;--delay:0.5s;">◇</div>
+    <div class="hero-floating" style="top:50%;left:1%;--dur:12s;--delay:3s;">✦</div>
+    <div class="hero-particles" id="hero-particles"></div>
 
-  <div class="hero-inner" id="hero-inner">
-    <p class="hero-eyebrow">A private world, made just for you</p>
-    <h1 class="hero-title">For you,<br>Saptaparna</h1>
-    <div class="hero-divider"></div>
-    <p class="hero-subtitle">In the quiet between heartbeats,<br>I wrote you a thousand soft things.</p>
-    <div class="hero-scroll-line"></div>
+    <div class="hero-inner" id="hero-inner">
+      <p class="hero-eyebrow">A private world, made just for you</p>
+      <h1 class="hero-title">For you,<br>Saptaparna</h1>
+      <div class="hero-divider"></div>
+      <p class="hero-subtitle">In the quiet between heartbeats,<br>I wrote you a thousand soft things.</p>
+      <div class="hero-scroll-line"></div>
+    </div>
+
   </div>
 
   <div class="hero-heart-cursor" id="hero-heart-cursor">
@@ -2549,6 +2586,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     initLetter();
     initReveal();
     initHeroEntrance();
+    initHeroScrollScene();
     initMusic();
     initKonami();
     if (shouldOpenAdminFromUrl()) {
@@ -2574,9 +2612,11 @@ function enterSite() {
   if (introComplete) return;
   introComplete = true;
   const ls = document.getElementById('loading-screen');
+  const hero = document.getElementById('hero');
   const heroInner = document.getElementById('hero-inner');
   if (ls) ls.classList.add('hidden');
   if (heroInner) setTimeout(() => heroInner.classList.add('revealed'), 250);
+  if (hero) setTimeout(() => hero.classList.add('scroll-ready'), 1800);
 }
 
 /* ═══════════════════════════════════════
@@ -2603,7 +2643,7 @@ function initHeroEntrance() {
   if (portrait.complete) portrait.classList.add('loaded');
 
   /* Background portrait parallax */
-  const heroEl = document.getElementById('hero');
+  const heroEl = document.getElementById('hero-stage') || document.getElementById('hero');
   if (heroEl && portrait) {
     heroEl.addEventListener('mousemove', (e) => {
       const rect = heroEl.getBoundingClientRect();
@@ -2625,6 +2665,47 @@ function initHeroEntrance() {
 
   /* Twinkling ambient dust particles */
   initHeroParticles();
+}
+
+function initHeroScrollScene() {
+  const hero = document.getElementById('hero');
+  const stage = document.getElementById('hero-stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (!hero || !stage || reduceMotion.matches) return;
+
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+  const easeOutCubic = (value) => 1 - Math.pow(1 - value, 3);
+  const easeInOut = (value) => value * value * (3 - 2 * value);
+  let ticking = false;
+
+  const updateHeroScroll = () => {
+    const rect = hero.getBoundingClientRect();
+    const scrollable = Math.max(1, hero.offsetHeight - window.innerHeight);
+    const progress = clamp(-rect.top / scrollable, 0, 1);
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const maxZoom = isMobile ? 0.055 : 0.095;
+    const exitProgress = easeInOut(clamp((progress - 0.48) / 0.52, 0, 1));
+    const copyProgress = easeInOut(clamp((progress - 0.18) / 0.56, 0, 1));
+    const zoom = 1 + easeOutCubic(clamp(progress / 0.86, 0, 1)) * maxZoom;
+    const lift = -(window.innerHeight * 0.045 * exitProgress);
+
+    stage.style.setProperty('--hero-zoom', zoom.toFixed(4));
+    stage.style.setProperty('--hero-lift', `${lift.toFixed(1)}px`);
+    stage.style.setProperty('--hero-stage-opacity', (1 - exitProgress * 0.18).toFixed(3));
+    stage.style.setProperty('--hero-copy-opacity', (1 - copyProgress * 0.86).toFixed(3));
+    stage.style.setProperty('--hero-copy-y', `${(-34 * copyProgress).toFixed(1)}px`);
+    ticking = false;
+  };
+
+  const requestHeroScrollUpdate = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(updateHeroScroll);
+  };
+
+  window.addEventListener('scroll', requestHeroScrollUpdate, { passive: true });
+  window.addEventListener('resize', requestHeroScrollUpdate);
+  updateHeroScroll();
 }
 
 /* ═══════════════════════════════════════
