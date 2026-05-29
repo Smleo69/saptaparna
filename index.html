@@ -35,10 +35,11 @@
       --text-muted: #3d5870;
       --accent: #c9a87c;
       --accent2: #7ba8c9;
+      --hero-scroll-tail: 45vh;
     }
 
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
     
     body {
       background: var(--deep);
@@ -226,8 +227,8 @@
        ① HERO
     ════════════════════════════════ */
     #hero {
-      height: 145vh;
-      min-height: calc(600px + 45vh);
+      height: calc(100vh + var(--hero-scroll-tail));
+      min-height: calc(600px + var(--hero-scroll-tail));
       padding: 0;
       background: var(--deep);
       overflow: visible;
@@ -507,6 +508,9 @@
     ════════════════════════════════ */
     #gallery {
       background: var(--storm);
+      margin-top: calc(-1 * var(--hero-scroll-tail));
+      position: relative;
+      z-index: 2;
     }
     #gallery::before {
       content: '';
@@ -802,10 +806,12 @@
 
     .poems-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 360px));
       gap: 1.8rem;
-      max-width: 1200px;
+      max-width: 820px;
       margin: 0 auto;
+      align-items: stretch;
+      justify-content: center;
     }
 
     .poem-card {
@@ -813,11 +819,19 @@
       backdrop-filter: blur(20px);
       border: 1px solid rgba(110,147,178,0.1);
       border-radius: 16px;
-      padding: 2.5rem 2.2rem;
+      padding: 2.2rem 2rem;
       position: relative;
       overflow: hidden;
       transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
       box-shadow: 0 8px 32px rgba(4,8,16,0.3);
+      height: 22rem;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
     }
     .poem-card::before {
       content: '';
@@ -841,6 +855,10 @@
       transform: translateY(-5px);
       box-shadow: 0 20px 60px rgba(4,8,16,0.5), 0 0 0 1px rgba(110,147,178,0.2);
       border-color: rgba(110,147,178,0.2);
+    }
+    .poem-card:focus-visible {
+      outline: 2px solid rgba(154,182,207,0.72);
+      outline-offset: 4px;
     }
 
     .poem-badge {
@@ -869,16 +887,56 @@
       font-size: 1.4rem;
       font-style: italic;
       color: var(--pearl);
-      margin-bottom: 1.4rem;
+      margin-bottom: 1.1rem;
       line-height: 1.2;
+      display: -webkit-box;
+      line-clamp: 2;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .poem-text {
       font-family: 'Cormorant Garamond', serif;
       font-size: 1.08rem;
-      line-height: 2.2;
+      line-height: 1.95;
       color: var(--text-mid);
       white-space: pre-line;
-      overflow-wrap: break-word;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      line-clamp: 6;
+      -webkit-line-clamp: 6;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .poem-open-cue {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: auto;
+      padding-top: 1.4rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--silver-light);
+    }
+    .poem-open-cue::after {
+      content: '->';
+      letter-spacing: 0;
+      opacity: 0.75;
+    }
+    .poems-more-wrap { text-align: center; margin-top: 2.4rem; display: none; }
+
+    @media (min-width: 1024px) {
+      .poems-grid,
+      .poems-more-wrap {
+        max-width: 820px;
+        margin-left: 0;
+        margin-right: auto;
+      }
+      .poems-grid {
+        justify-content: start;
+      }
     }
 
     /* ════════════════════════════════
@@ -934,15 +992,19 @@
       font-size: 1.1rem;
       color: var(--pearl);
       margin-bottom: 0.5rem;
+      overflow-wrap: anywhere;
     }
+    .recent-body { min-width: 0; }
     .recent-excerpt {
       font-family: 'Cormorant Garamond', serif;
       font-size: 0.95rem;
       color: var(--text-soft);
       line-height: 1.7;
+      overflow-wrap: anywhere;
     }
     .recent-more-wrap { text-align: center; margin-top: 2.5rem; display: none; }
-    .recent-more-btn {
+    .recent-more-btn,
+    .poems-more-btn {
       font-family: 'Lato', sans-serif;
       font-weight: 300;
       letter-spacing: 0.3em;
@@ -955,8 +1017,10 @@
       border-radius: 30px;
       cursor: pointer;
       transition: all 0.3s;
+      min-height: 44px;
     }
-    .recent-more-btn:hover {
+    .recent-more-btn:hover,
+    .poems-more-btn:hover {
       background: rgba(110,147,178,0.1);
       border-color: var(--silver-light);
       color: var(--pearl);
@@ -973,6 +1037,17 @@
       justify-content: center;
     }
     .all-poems-overlay.open { display: flex; animation: fadeIn 0.3s ease; }
+    .poem-reader-overlay {
+      position: fixed; inset: 0;
+      background: rgba(4,8,16,0.88);
+      backdrop-filter: blur(14px);
+      z-index: 2600;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 5vw;
+    }
+    .poem-reader-overlay.open { display: flex; animation: fadeIn 0.3s ease; }
     .all-poems-modal {
       background: var(--rain);
       border: 1px solid rgba(110,147,178,0.15);
@@ -986,7 +1061,7 @@
     }
     .all-poems-close {
       position: absolute; top: 1.2rem; right: 1.2rem;
-      width: 32px; height: 32px;
+      width: 44px; height: 44px;
       border-radius: 50%; border: 1px solid rgba(110,147,178,0.2);
       background: var(--cloud);
       color: var(--text-mid);
@@ -1002,7 +1077,7 @@
       font-size: 1.5rem;
       color: var(--pearl);
       margin-bottom: 1.5rem;
-      padding-right: 2rem;
+      padding-right: 3.5rem;
     }
     .all-poems-list {
       max-height: 50vh; overflow-y: auto;
@@ -1010,22 +1085,100 @@
     }
     .all-poems-item {
       display: flex; align-items: center; gap: 1rem;
+      width: 100%;
       padding: 1rem 1.2rem;
       background: var(--cloud);
       border-radius: 10px;
       border: 1px solid rgba(110,147,178,0.1);
       transition: all 0.2s;
       cursor: pointer;
+      color: inherit;
+      text-align: left;
+      font: inherit;
+      min-height: 72px;
     }
     .all-poems-item:hover {
       border-color: rgba(110,147,178,0.3);
       background: var(--mist-dark);
     }
+    .all-poems-item:focus-visible {
+      outline: 2px solid rgba(154,182,207,0.72);
+      outline-offset: 3px;
+    }
     .all-poems-date { min-width: 50px; text-align: center; }
     .all-poems-day { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--silver); line-height: 1; }
     .all-poems-month { font-family: 'Lato', sans-serif; font-size: 0.55rem; letter-spacing: 0.15em; color: var(--text-soft); text-transform: uppercase; }
-    .all-poems-info h4 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1rem; color: var(--pearl); margin-bottom: 0.2rem; }
-    .all-poems-info p { font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; color: var(--text-soft); }
+    .all-poems-info { min-width: 0; }
+    .all-poems-info h4 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1rem; color: var(--pearl); margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .all-poems-info p { font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; color: var(--text-soft); overflow-wrap: anywhere; }
+    .all-poems-empty {
+      text-align: center;
+      color: var(--text-soft);
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1.05rem;
+      line-height: 1.8;
+      padding: 2rem 0.5rem;
+    }
+    .poem-reader-modal {
+      background:
+        linear-gradient(180deg, rgba(20,34,54,0.96), rgba(13,24,40,0.98)),
+        var(--rain);
+      border: 1px solid rgba(110,147,178,0.18);
+      border-radius: 20px;
+      width: min(92vw, 720px);
+      max-height: 84vh;
+      padding: 2.7rem 3rem;
+      box-shadow: 0 34px 90px rgba(4,8,16,0.68);
+      position: relative;
+      overflow: hidden;
+    }
+    .poem-reader-modal::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--silver), var(--gold), transparent);
+      opacity: 0.55;
+    }
+    .poem-reader-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 0.8rem;
+      padding-right: 3rem;
+    }
+    .poem-reader-meta .poem-badge {
+      margin: 0;
+      font-size: 0.52rem;
+      padding: 0.16rem 0.52rem;
+    }
+    .poem-reader-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(1.7rem, 5vw, 2.6rem);
+      color: var(--pearl);
+      line-height: 1.12;
+      margin-bottom: 1.6rem;
+      padding-right: 3.25rem;
+    }
+    .poem-reader-text {
+      font-family: 'Cormorant Garamond', serif;
+      color: var(--text-mid);
+      font-size: clamp(1.08rem, 2.5vw, 1.24rem);
+      line-height: 2.05;
+      white-space: pre-line;
+      overflow-y: auto;
+      max-height: 52vh;
+      padding-right: 0.8rem;
+      overflow-wrap: anywhere;
+    }
 
     /* ════════════════════════════════
        ⑤ LETTER
@@ -1955,6 +2108,19 @@
       .memory-note { max-height: none; }
       .gallery-archive { padding: 2rem 4vw; }
       .gallery-archive-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 62vh; }
+      .poems-grid { max-width: 360px; gap: 1.1rem; }
+      .poem-card { height: 20rem; padding: 1.8rem 1.45rem; }
+      .all-poems-modal,
+      .poem-reader-modal {
+        width: min(94vw, 600px);
+        max-height: 84vh;
+        padding: 2.2rem 1.45rem;
+        border-radius: 16px;
+      }
+      .all-poems-list { max-height: 56vh; }
+      .all-poems-item { padding: 0.85rem; gap: 0.75rem; }
+      .poem-reader-title { padding-right: 3rem; }
+      .poem-reader-text { max-height: 50vh; padding-right: 0.4rem; }
       .letter-paper { padding: 2.5rem 1.8rem; }
       .letter-paper::before { left: 1.5rem; }
       #music-player { right: 0.8rem; bottom: 0.8rem; }
@@ -1981,6 +2147,7 @@
         height: 100vh;
         min-height: 600px;
       }
+      #gallery { margin-top: 0; }
       .hero-stage {
         transform: none;
         opacity: 1;
@@ -2100,6 +2267,9 @@
     <h2 class="section-title">Words I wrote for you</h2>
   </div>
   <div class="poems-grid" id="poems-grid"></div>
+  <div class="poems-more-wrap reveal d2" id="poems-more-wrap">
+    <button class="poems-more-btn" type="button" onclick="openAllPoems()">More poems &nbsp;→</button>
+  </div>
 </section>
 
 <!-- ④ RECENT -->
@@ -2110,17 +2280,30 @@
   </div>
   <div class="recent-list reveal d1" id="recent-list"></div>
   <div class="recent-more-wrap reveal d2" id="recent-more-wrap">
-    <button class="recent-more-btn" onclick="openAllPoems()">More &nbsp;→</button>
+    <button class="recent-more-btn" type="button" onclick="openAllPoems(3)">More &nbsp;→</button>
   </div>
 </section>
 
 <!-- All Poems Modal -->
 <div class="all-poems-overlay" id="all-poems-overlay">
   <div class="all-poems-modal">
-    <button class="all-poems-close" onclick="closeAllPoems()">×</button>
-    <h3 class="all-poems-title">All Poems</h3>
+    <button class="all-poems-close" type="button" onclick="closeAllPoems()" aria-label="Close more poems">×</button>
+    <h3 class="all-poems-title" id="all-poems-title">More Poems</h3>
     <div class="all-poems-list" id="all-poems-list"></div>
   </div>
+</div>
+
+<!-- Poem Reader Modal -->
+<div class="poem-reader-overlay" id="poem-reader-overlay">
+  <article class="poem-reader-modal" role="dialog" aria-modal="true" aria-labelledby="poem-reader-title">
+    <button class="all-poems-close" type="button" onclick="closePoemReader()" aria-label="Close poem reader">×</button>
+    <p class="poem-reader-meta">
+      <span id="poem-reader-date"></span>
+      <span class="poem-badge" id="poem-reader-new" style="display:none;">New</span>
+    </p>
+    <h3 class="poem-reader-title" id="poem-reader-title"></h3>
+    <div class="poem-reader-text" id="poem-reader-text"></div>
+  </article>
 </div>
 
 <!-- ⑤ LETTER -->
@@ -2534,7 +2717,8 @@ async function loadSiteData() {
       id: poem.id,
       title: poem.title,
       date: poem.written_on,
-      content: poem.content
+      content: poem.content,
+      createdAt: poem.created_at
     }));
   } else showDataError('Poems load', poemsRes.error, false);
 
@@ -2940,15 +3124,31 @@ function closeLightbox() {
 /* ═══════════════════════════════════════
    POEM DATA
 ═══════════════════════════════════════ */
+const POETRY_FEATURED_LIMIT = 2;
+const NEW_POEM_BADGE_MS = 24 * 60 * 60 * 1000;
 function getSavedPoems() {
   return savedPoems;
 }
 function getAllPoems() {
   return getSavedPoems().slice().sort((a,b) => new Date(b.date) - new Date(a.date));
 }
-function isNew(d) { return (Date.now() - new Date(d).getTime()) < 7*86400000; }
+function isNew(poemOrDate) {
+  const reference = poemOrDate?.createdAt || poemOrDate?.created_at || poemOrDate?.date || poemOrDate?.written_on || poemOrDate;
+  const createdTime = new Date(reference).getTime();
+  const age = Date.now() - createdTime;
+  return Number.isFinite(createdTime) && age >= 0 && age < NEW_POEM_BADGE_MS;
+}
 function fmtDate(d) {
   return new Date(d+'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+}
+function getPoemExcerpt(content, maxLength = 150) {
+  const text = String(content || '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .join(' / ');
+  if (!text) return 'A quiet poem is waiting to be read.';
+  return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
 }
 
 /* ═══════════════════════════════════════
@@ -3034,6 +3234,7 @@ function closeGalleryArchive() {
 ═══════════════════════════════════════ */
 function buildPoems() {
   const grid = document.getElementById('poems-grid');
+  const moreWrap = document.getElementById('poems-more-wrap');
   grid.innerHTML = '';
   const poems = getAllPoems();
   if (!poems.length) {
@@ -3043,18 +3244,24 @@ function buildPoems() {
         <span style="font-size:0.9rem;letter-spacing:0.12em;color:var(--text-muted);">A quiet space is waiting for the first words.</span>
       </p>
     </div>`;
+    if (moreWrap) moreWrap.style.display = 'none';
     return;
   }
-  poems.forEach((p, i) => {
-    const card = document.createElement('div');
+  poems.slice(0, POETRY_FEATURED_LIMIT).forEach((p, i) => {
+    const card = document.createElement('button');
+    card.type = 'button';
     card.className = `poem-card reveal d${(i%5)+1}`;
+    card.setAttribute('aria-label', `Read poem: ${p.title}`);
     card.innerHTML = `
-      ${isNew(p.date) ? '<span class="poem-badge">New</span>' : ''}
+      ${isNew(p) ? '<span class="poem-badge">New</span>' : ''}
       <p class="poem-date">${fmtDate(p.date)}</p>
       <h3 class="poem-title">${escapeHtml(p.title)}</h3>
-      <p class="poem-text">${escapeHtml(p.content)}</p>`;
+      <p class="poem-text">${escapeHtml(getPoemExcerpt(p.content, 230))}</p>
+      <span class="poem-open-cue">Read poem</span>`;
+    card.addEventListener('click', () => openPoemReader(i));
     grid.appendChild(card);
   });
+  if (moreWrap) moreWrap.style.display = poems.length > POETRY_FEATURED_LIMIT ? 'block' : 'none';
   initReveal();
 }
 
@@ -3086,8 +3293,8 @@ function buildRecent() {
       </div>
       <div class="recent-sep"></div>
       <div class="recent-body">
-        <h3>${escapeHtml(p.title)}${isNew(p.date)?' <span class="poem-badge" style="font-size:0.52rem;padding:0.15rem 0.5rem">New</span>':''}</h3>
-        <p class="recent-excerpt">${escapeHtml(p.content.split('\n')[0].slice(0,90))}…</p>
+        <h3>${escapeHtml(p.title)}${isNew(p)?' <span class="poem-badge" style="font-size:0.52rem;padding:0.15rem 0.5rem">New</span>':''}</h3>
+        <p class="recent-excerpt">${escapeHtml(getPoemExcerpt(p.content, 90))}</p>
       </div>`;
     list.appendChild(item);
   });
@@ -3095,29 +3302,68 @@ function buildRecent() {
   initReveal();
 }
 
-function openAllPoems() {
+function openAllPoems(startIndex = POETRY_FEATURED_LIMIT) {
   const overlay = document.getElementById('all-poems-overlay');
   const list = document.getElementById('all-poems-list');
+  const title = document.getElementById('all-poems-title');
   const allPoems = getAllPoems();
-  list.innerHTML = allPoems.map((p,i) => {
+  const olderPoems = allPoems.slice(startIndex);
+  list.innerHTML = '';
+  if (title) title.textContent = startIndex <= POETRY_FEATURED_LIMIT ? 'More Poems' : 'More Writings';
+  if (!olderPoems.length) {
+    list.innerHTML = '<p class="all-poems-empty">The older poems will gather here as more words are added.</p>';
+  }
+  olderPoems.forEach((p, i) => {
     const d = new Date(p.date+'T00:00:00');
-    return `<div class="all-poems-item" onclick="closeAllPoems()">
+    const poemIndex = startIndex + i;
+    const item = document.createElement('div');
+    item.className = 'all-poems-item';
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-label', `Read poem: ${p.title}`);
+    item.innerHTML = `
       <div class="all-poems-date">
         <div class="all-poems-day">${String(d.getDate()).padStart(2,'0')}</div>
         <div class="all-poems-month">${d.toLocaleString('en-US',{month:'short'})}</div>
       </div>
       <div class="all-poems-info">
         <h4>${escapeHtml(p.title)}</h4>
-        <p>${escapeHtml(p.content.split('\n')[0].slice(0,60))}…</p>
+        <p>${escapeHtml(getPoemExcerpt(p.content, 80))}</p>
       </div>
-    </div>`;
-  }).join('');
+    `;
+    item.addEventListener('click', () => openPoemReader(poemIndex));
+    item.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openPoemReader(poemIndex);
+      }
+    });
+    list.appendChild(item);
+  });
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 function closeAllPoems() {
   document.getElementById('all-poems-overlay').classList.remove('open');
-  document.body.style.overflow = '';
+  if (!document.getElementById('poem-reader-overlay').classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
+}
+function openPoemReader(poemIndex) {
+  const poem = getAllPoems()[poemIndex];
+  if (!poem) return;
+  document.getElementById('poem-reader-date').textContent = fmtDate(poem.date);
+  document.getElementById('poem-reader-title').textContent = poem.title;
+  document.getElementById('poem-reader-text').textContent = poem.content;
+  document.getElementById('poem-reader-new').style.display = isNew(poem) ? 'inline-block' : 'none';
+  document.getElementById('poem-reader-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closePoemReader() {
+  document.getElementById('poem-reader-overlay').classList.remove('open');
+  if (!document.getElementById('all-poems-overlay').classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
 }
 
 /* ═══════════════════════════════════════
@@ -3370,7 +3616,7 @@ function initKonami() {
     kSeq.push(key);
     if (kSeq.length > KONAMI.length) kSeq.shift();
     if (JSON.stringify(kSeq) === JSON.stringify(KONAMI)) showPwModal();
-    if (key === 'Escape') { closeLightbox(); closeGalleryArchive(); closeAdmin(); closePwModal(); closeAllPoems(); }
+    if (key === 'Escape') { closeLightbox(); closeGalleryArchive(); closeAdmin(); closePwModal(); closeAllPoems(); closePoemReader(); }
   });
 }
 function showPwModal() {
@@ -3416,7 +3662,7 @@ async function publishPoem() {
     content
   }).select().single();
   if (error) { showDataError('Poem publish', error); return; }
-  savedPoems.unshift({ id: data.id, title: data.title, date: data.written_on, content: data.content });
+  savedPoems.unshift({ id: data.id, title: data.title, date: data.written_on, content: data.content, createdAt: data.created_at || new Date().toISOString() });
   document.getElementById('a-title').value = '';
   document.getElementById('a-content').value = '';
   document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
@@ -3510,7 +3756,7 @@ async function updatePoem() {
     content
   }).eq('id', editingPoemId);
   if (error) { showDataError('Poem update', error); return; }
-  poems[index] = { id: editingPoemId, title, date, content };
+  poems[index] = { id: editingPoemId, title, date, content, createdAt: poems[index].createdAt };
   document.getElementById('a-title').value = '';
   document.getElementById('a-content').value = '';
   document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
@@ -3767,6 +4013,12 @@ document.getElementById('lightbox').addEventListener('click', e => {
 });
 document.getElementById('gallery-archive').addEventListener('click', e => {
   if (e.target === document.getElementById('gallery-archive')) closeGalleryArchive();
+});
+document.getElementById('all-poems-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('all-poems-overlay')) closeAllPoems();
+});
+document.getElementById('poem-reader-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('poem-reader-overlay')) closePoemReader();
 });
 </script>
 </body>
