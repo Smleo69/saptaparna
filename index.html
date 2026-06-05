@@ -3626,22 +3626,23 @@ function renderAdminPoemsList() {
   }
   container.innerHTML = '';
   poems.forEach(p => {
+    const poemIdArg = JSON.stringify(p.id).replace(/"/g, '&quot;');
     const item = document.createElement('div');
     item.className = 'admin-poem-item';
     item.dataset.id = p.id;
     item.innerHTML = `
-      <div class="admin-poem-item-info" onclick="editPoem(${p.id})">
+      <div class="admin-poem-item-info" onclick="editPoem(${poemIdArg})">
         <div class="admin-poem-item-title">${escapeHtml(p.title)}</div>
         <div class="admin-poem-item-date">${fmtDate(p.date)}</div>
       </div>
       <div class="admin-poem-actions">
-        <button class="admin-poem-btn edit" onclick="editPoem(${p.id})" title="Edit">✎</button>
-        <button class="admin-poem-btn delete" onclick="confirmDelete(${p.id}, this)" title="Delete">✕</button>
+        <button class="admin-poem-btn edit" onclick="editPoem(${poemIdArg})" title="Edit">✎</button>
+        <button class="admin-poem-btn delete" onclick="confirmDelete(${poemIdArg}, this)" title="Delete">✕</button>
       </div>
       <div class="delete-confirm" id="dc-${p.id}" style="display:none;">
         <span style="font-size:0.75rem;color:var(--text-soft);">Delete this poem?</span>
-        <button class="admin-poem-btn delete" onclick="deletePoem(${p.id})" style="font-size:0.7rem;width:auto;padding:0 0.6rem;">Yes</button>
-        <button class="admin-poem-btn edit" onclick="cancelDelete(${p.id})" style="font-size:0.7rem;width:auto;padding:0 0.6rem;">No</button>
+        <button class="admin-poem-btn delete" onclick="deletePoem(${poemIdArg})" style="font-size:0.7rem;width:auto;padding:0 0.6rem;">Yes</button>
+        <button class="admin-poem-btn edit" onclick="cancelDelete(${poemIdArg})" style="font-size:0.7rem;width:auto;padding:0 0.6rem;">No</button>
       </div>`;
     container.appendChild(item);
   });
