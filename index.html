@@ -43,6 +43,7 @@
       --stack-shadow: 0;
       --stack-outline: 0;
       --stack-opacity: 1;
+      --stack-blur: 0px;
     }
 
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -59,6 +60,106 @@
       font-weight: 300;
       overflow-x: hidden;
       cursor: crosshair;
+    }
+
+    @media (pointer: fine) {
+      body.custom-cursor-ready,
+      body.custom-cursor-ready button,
+      body.custom-cursor-ready a,
+      body.custom-cursor-ready label,
+      body.custom-cursor-ready [role="button"],
+      body.custom-cursor-ready .gallery-item,
+      body.custom-cursor-ready .poem-card,
+      body.custom-cursor-ready .recent-more-btn,
+      body.custom-cursor-ready .gallery-more-btn {
+        cursor: none !important;
+      }
+      body.custom-cursor-ready input:not([type="range"]),
+      body.custom-cursor-ready textarea,
+      body.custom-cursor-ready select,
+      body.custom-cursor-ready [contenteditable="true"] {
+        cursor: text !important;
+      }
+    }
+
+    .custom-cursor {
+      position: fixed;
+      inset: 0 auto auto 0;
+      width: 1px;
+      height: 1px;
+      z-index: 10050;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.22s ease;
+      contain: layout style;
+    }
+    .custom-cursor.visible { opacity: 1; }
+    .custom-cursor-dot,
+    .custom-cursor-ring,
+    .custom-cursor-glow {
+      position: fixed;
+      left: 0;
+      top: 0;
+      pointer-events: none;
+      transform: translate3d(-50%, -50%, 0);
+      border-radius: 50%;
+      will-change: transform, opacity;
+    }
+    .custom-cursor-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--gold);
+      box-shadow:
+        0 0 10px rgba(201,168,124,0.72),
+        0 0 24px rgba(110,147,178,0.22);
+    }
+    .custom-cursor-ring {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(201,168,124,0.58);
+      box-shadow:
+        inset 0 0 16px rgba(201,168,124,0.08),
+        0 0 18px rgba(110,147,178,0.16);
+      transition:
+        width 0.22s ease,
+        height 0.22s ease,
+        border-color 0.22s ease,
+        opacity 0.22s ease;
+    }
+    .custom-cursor-glow {
+      width: 54px;
+      height: 54px;
+      background: radial-gradient(circle, rgba(201,168,124,0.12) 0%, rgba(110,147,178,0.06) 34%, transparent 68%);
+      opacity: 0.75;
+      transition: opacity 0.22s ease;
+    }
+    .custom-cursor.interactive .custom-cursor-ring {
+      width: 44px;
+      height: 44px;
+      border-color: rgba(232,240,247,0.68);
+    }
+    .custom-cursor.interactive .custom-cursor-glow { opacity: 1; }
+    .custom-cursor.text-mode { opacity: 0; }
+    .custom-cursor-echo {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      pointer-events: none;
+      z-index: 10049;
+      border-radius: 50%;
+      border: 1px solid rgba(201,168,124,0.62);
+      transform: translate3d(-50%, -50%, 0) scale(0.6);
+      animation: cursorEcho 0.62s ease-out forwards;
+    }
+    @keyframes cursorEcho {
+      0% { opacity: 0.8; transform: translate3d(-50%, -50%, 0) scale(0.6); }
+      100% { opacity: 0; transform: translate3d(-50%, -50%, 0) scale(5.2); }
+    }
+    @media (pointer: coarse), (prefers-reduced-motion: reduce) {
+      .custom-cursor,
+      .custom-cursor-echo {
+        display: none !important;
+      }
     }
 
     ::-webkit-scrollbar { width: 4px; }
@@ -114,11 +215,12 @@
       transform-origin: 50% 8%;
       border-radius: var(--stack-radius, 0px);
       opacity: var(--stack-opacity, 1);
+      filter: blur(var(--stack-blur, 0px));
       outline: 1px solid rgba(154,182,207,var(--stack-outline, 0));
       box-shadow:
         0 calc(32px * var(--stack-shadow, 0)) calc(96px * var(--stack-shadow, 0)) rgba(0,0,0,0.52),
         0 calc(60px * var(--stack-dim, 0)) calc(120px * var(--stack-dim, 0)) rgba(0,0,0,0.42);
-      will-change: transform, border-radius, box-shadow, opacity;
+      will-change: transform, filter, border-radius, box-shadow, opacity;
     }
 
     #panel-stack .stack-viewport > .stack-panel {
@@ -1042,6 +1144,10 @@
       color: inherit;
       font: inherit;
       cursor: pointer;
+    }
+    #poetry.stack-filtering .poem-card {
+      background: rgba(13,24,40,0.9);
+      backdrop-filter: none;
     }
     .poem-card::before {
       content: '';
@@ -2524,6 +2630,7 @@
         position: relative;
         top: auto;
         transform: none;
+        filter: none;
         border-radius: 0;
         box-shadow: none;
         opacity: 1;
@@ -3125,6 +3232,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     loadingQuoteEl.textContent = loadingQuotes[Math.floor(Math.random() * loadingQuotes.length)];
 
   initPanelStack();
+  initCustomCursor();
 
   try {
     await loadSiteData();
@@ -3166,6 +3274,89 @@ function enterSite() {
   if (ls) ls.classList.add('hidden');
   if (heroInner) setTimeout(() => heroInner.classList.add('revealed'), 250);
   if (hero) setTimeout(() => hero.classList.add('scroll-ready'), 1800);
+}
+
+function initCustomCursor() {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+  if (reduceMotion || !finePointer) return;
+
+  const cursor = document.createElement('div');
+  cursor.className = 'custom-cursor';
+  cursor.setAttribute('aria-hidden', 'true');
+  cursor.innerHTML = `
+    <span class="custom-cursor-glow"></span>
+    <span class="custom-cursor-ring"></span>
+    <span class="custom-cursor-dot"></span>
+  `;
+  document.body.appendChild(cursor);
+  document.body.classList.add('custom-cursor-ready');
+
+  const glow = cursor.querySelector('.custom-cursor-glow');
+  const ring = cursor.querySelector('.custom-cursor-ring');
+  const dot = cursor.querySelector('.custom-cursor-dot');
+  const interactiveSelector = 'a, button, [role="button"], input[type="range"], .gallery-item, .poem-card, .all-poems-item, .recent-item, .stack-progress-dot, .mini-play, .volume-icon';
+  const textSelector = 'input:not([type="range"]), textarea, select, [contenteditable="true"]';
+  let mouseX = window.innerWidth / 2;
+  let mouseY = window.innerHeight / 2;
+  let ringX = mouseX;
+  let ringY = mouseY;
+  let glowX = mouseX;
+  let glowY = mouseY;
+  let started = false;
+
+  const setTransform = (el, x, y) => {
+    el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+  };
+
+  const animate = () => {
+    ringX += (mouseX - ringX) * 0.22;
+    ringY += (mouseY - ringY) * 0.22;
+    glowX += (mouseX - glowX) * 0.12;
+    glowY += (mouseY - glowY) * 0.12;
+    setTransform(dot, mouseX, mouseY);
+    setTransform(ring, ringX, ringY);
+    setTransform(glow, glowX, glowY);
+    requestAnimationFrame(animate);
+  };
+
+  const updateMode = (target) => {
+    const textMode = Boolean(target.closest(textSelector));
+    const interactive = Boolean(target.closest(interactiveSelector));
+    cursor.classList.toggle('text-mode', textMode);
+    cursor.classList.toggle('interactive', interactive && !textMode);
+  };
+
+  document.addEventListener('pointermove', (event) => {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    cursor.classList.add('visible');
+    updateMode(event.target);
+    if (!started) {
+      started = true;
+      ringX = mouseX;
+      ringY = mouseY;
+      glowX = mouseX;
+      glowY = mouseY;
+      requestAnimationFrame(animate);
+    }
+  }, { passive: true });
+
+  document.addEventListener('pointerleave', () => {
+    cursor.classList.remove('visible');
+  });
+
+  document.addEventListener('pointerdown', (event) => {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    if (event.target.closest(textSelector)) return;
+    const echo = document.createElement('span');
+    echo.className = 'custom-cursor-echo';
+    echo.style.left = `${event.clientX}px`;
+    echo.style.top = `${event.clientY}px`;
+    document.body.appendChild(echo);
+    echo.addEventListener('animationend', () => echo.remove(), { once: true });
+  });
 }
 
 /* ═══════════════════════════════════════
@@ -3347,9 +3538,13 @@ function initPanelStack() {
     const maxDim = isMobile ? 0.38 : 0.44;
     const maxRadius = isMobile ? 14 : 20;
     const enterOffset = isMobile ? 104 : 108;
+    const enterDelay = isMobile ? 0.22 : 0.3;
+    const activeHandoff = 0.72;
+    const maxExitBlur = isMobile ? 0 : 3.4;
+    const maxBackBlur = isMobile ? 0 : 4.6;
     const scrollY = window.scrollY || window.pageYOffset || 0;
     const rawProgress = clamp((scrollY - stackTop) / viewportHeight, 0, panels.length - 1);
-    const activeIndex = Math.round(rawProgress);
+    const activeIndex = clamp(Math.floor(rawProgress + (1 - activeHandoff)), 0, panels.length - 1);
     progressEl.style.setProperty('--stack-progress-opacity', modalIsOpen() ? '0' : '1');
     dots.forEach((dot, index) => {
       const active = index === activeIndex;
@@ -3366,6 +3561,7 @@ function initPanelStack() {
       let shadow = 0;
       let outline = 0;
       let opacity = 0;
+      let blur = 0;
       let z = index + 1;
 
       if (delta < -1) {
@@ -3373,7 +3569,8 @@ function initPanelStack() {
         scale = 1;
         radius = maxRadius;
       } else if (delta < 0) {
-        const enter = ease(delta + 1);
+        const enterPhase = clamp(((delta + 1) - enterDelay) / (1 - enterDelay), 0, 1);
+        const enter = ease(enterPhase);
         translateY = `${((1 - enter) * enterOffset).toFixed(2)}vh`;
         scale = 0.985 + 0.015 * enter;
         dim = 0;
@@ -3391,6 +3588,7 @@ function initPanelStack() {
         shadow = 0.24 * (1 - exit);
         outline = 0.08 * exit;
         opacity = 1;
+        blur = maxExitBlur * exit;
         z = 200 + index;
       } else {
         const depth = Math.min(delta - 1, 4);
@@ -3401,6 +3599,7 @@ function initPanelStack() {
         shadow = 0.08;
         outline = 0.07;
         opacity = 1;
+        blur = maxBackBlur;
         z = 100 + index;
       }
 
@@ -3411,8 +3610,10 @@ function initPanelStack() {
       panel.style.setProperty('--stack-shadow', shadow.toFixed(3));
       panel.style.setProperty('--stack-outline', outline.toFixed(3));
       panel.style.setProperty('--stack-opacity', opacity.toFixed(3));
+      panel.style.setProperty('--stack-blur', `${blur.toFixed(2)}px`);
       panel.style.setProperty('--stack-z', String(z));
       panel.style.zIndex = String(z);
+      panel.classList.toggle('stack-filtering', blur > 0.05);
       panel.style.pointerEvents = index === activeIndex ? 'auto' : 'none';
     });
 
