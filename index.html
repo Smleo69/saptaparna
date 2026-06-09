@@ -3529,6 +3529,10 @@ function initPanelStack() {
     }, 900);
   };
 
+  const revealPanelContent = panel => {
+    panel.querySelectorAll('.reveal:not(.visible)').forEach(el => el.classList.add('visible'));
+  };
+
   const update = () => {
     const isMobile = window.matchMedia('(max-width: 680px)').matches;
     const shrink = isMobile ? 0.075 : 0.095;
@@ -3614,6 +3618,7 @@ function initPanelStack() {
       panel.style.setProperty('--stack-z', String(z));
       panel.style.zIndex = String(z);
       panel.classList.toggle('stack-filtering', blur > 0.05);
+      if (delta > -0.98 && delta < 1.25) revealPanelContent(panel);
       panel.style.pointerEvents = index === activeIndex ? 'auto' : 'none';
     });
 
@@ -4035,6 +4040,8 @@ function buildPoems() {
     grid.appendChild(card);
   });
   if (moreWrap) moreWrap.style.display = poems.length > POETRY_FEATURED_LIMIT ? 'block' : 'none';
+  document.getElementById('poetry')?.querySelectorAll('.reveal:not(.visible)')
+    .forEach(el => el.classList.add('visible'));
   initReveal();
 }
 
