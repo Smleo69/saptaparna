@@ -2778,7 +2778,7 @@
     <h2 class="section-title">Words I wrote for you</h2>
   </div>
   <div class="poems-grid" id="poems-grid"></div>
-  <div class="poems-more-wrap reveal d2" id="poems-more-wrap">
+  <div class="poems-more-wrap" id="poems-more-wrap">
     <button class="poems-more-btn" type="button" onclick="openAllPoems()">More poems &nbsp;→</button>
   </div>
 </section>
@@ -4028,7 +4028,7 @@ function buildPoems() {
   poems.slice(0, POETRY_FEATURED_LIMIT).forEach((p, i) => {
     const card = document.createElement('button');
     card.type = 'button';
-    card.className = `poem-card reveal d${(i%5)+1}`;
+    card.className = 'poem-card';
     card.setAttribute('aria-label', `Read poem: ${p.title}`);
     card.innerHTML = `
       ${isNew(p) ? '<span class="poem-badge">New</span>' : ''}
