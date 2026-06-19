@@ -2245,7 +2245,7 @@
       gap: 1.5rem;
     }
     .hifi-right {
-      padding: 2rem;
+      padding: 4rem 2rem 2rem;
       background:
         linear-gradient(180deg, rgba(255,255,255,0.035), transparent 40%),
         rgba(4, 8, 16, 0.28);
@@ -2445,81 +2445,136 @@
       box-shadow: 0 0.5px 1px rgba(0,0,0,0.2);
     }
     
-    /* VU METERS PANEL */
-    .hifi-vu-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.2rem;
-      background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(4,8,16,0.42));
-      padding: 0.8rem 1rem;
+    /* Spinning cassette monitor */
+    .hifi-spin-panel {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.035), rgba(4,8,16,0.46)),
+        #070b12;
+      padding: 0.8rem 0.95rem;
       border-radius: 8px;
       border: 1px solid rgba(180,190,206,0.08);
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.58), 0 1px 0 rgba(255,255,255,0.035);
     }
-    .vu-gauge {
-      height: 54px;
-      background:
-        radial-gradient(circle at center bottom, rgba(var(--hifi-accent-rgb),0.18) 0%, transparent 36%),
-        radial-gradient(circle at center bottom, #f5ecd5 30%, #e0d0b0 100%);
-      border: 1px solid #1a222e;
-      border-radius: 6px;
+    .spin-status-row,
+    .spin-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.48rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.32);
+    }
+    .spin-status-row span:last-child {
+      color: rgba(var(--hifi-accent-rgb), 0.72);
+    }
+    .spin-cassette {
       position: relative;
+      height: 76px;
+      margin: 0.55rem 0 0.48rem;
+      border-radius: 7px;
       overflow: hidden;
-      box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
+      background:
+        linear-gradient(180deg, rgba(var(--hifi-accent-rgb),0.06), transparent 46%),
+        linear-gradient(135deg, #202937 0%, #0d121c 100%);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 8px 18px rgba(255,255,255,0.035), inset 0 -10px 20px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2.2rem;
     }
-    .vu-gauge::before {
+    .spin-cassette::before {
       content: '';
       position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
-      z-index: 3;
-      pointer-events: none;
+      left: 12%;
+      right: 12%;
+      top: 50%;
+      height: 22px;
+      transform: translateY(-50%);
+      background: rgba(4,8,16,0.82);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 5px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.55);
     }
-    /* Dial tick markings on VU meters */
-    .vu-scale {
+    .spin-cassette::after {
+      content: '';
       position: absolute;
-      inset: 0;
-      background-image: radial-gradient(circle at 50% 100%, transparent 80%, #333 81%, #333 83%, transparent 84%);
-      opacity: 0.35;
-      pointer-events: none;
+      left: 19%;
+      right: 19%;
+      top: 50%;
+      height: 2px;
+      transform: translateY(-50%);
+      background: linear-gradient(90deg, rgba(110,76,42,0.75), rgba(182,127,72,0.85), rgba(110,76,42,0.75));
+      opacity: 0.72;
+      z-index: 1;
     }
-    .vu-label {
-      position: absolute;
-      bottom: 2px;
-      left: 6px;
-      font-size: 0.42rem;
-      font-weight: 800;
-      color: rgba(0,0,0,0.5);
-      text-transform: uppercase;
-      font-family: monospace;
-    }
-    .vu-label.right {
-      left: auto;
-      right: 6px;
-    }
-    .vu-needle {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      width: 1px;
-      height: 38px;
-      background: #e63946;
-      transform-origin: bottom center;
-      transform: translateX(-50%) rotate(var(--vu-rot, -45deg));
-      transition: transform 0.08s ease-out;
-      box-shadow: 0.5px 0 2px rgba(0,0,0,0.3);
+    .spin-reel-wrap {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       z-index: 2;
     }
-    .vu-needle::after {
-      content: '';
+    .spin-tape-wound {
       position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 6px;
-      height: 6px;
-      background: #111;
+      width: var(--tape-size, 44px);
+      height: var(--tape-size, 44px);
       border-radius: 50%;
+      background: radial-gradient(circle, rgba(126,84,48,0.8) 0%, rgba(68,43,20,0.96) 74%, transparent 100%);
+      transition: width 0.15s ease, height 0.15s ease;
+      opacity: 0.92;
+    }
+    .spin-reel {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid #2a3d55;
+      background:
+        radial-gradient(circle at center, #0b111b 0 5px, transparent 5px),
+        conic-gradient(from 0deg, #5e7186 0deg 24deg, #1e2d40 24deg 60deg, #5e7186 60deg 84deg, #1e2d40 84deg 120deg, #5e7186 120deg 144deg, #1e2d40 144deg 180deg, #5e7186 180deg 204deg, #1e2d40 204deg 240deg, #5e7186 240deg 264deg, #1e2d40 264deg 300deg, #5e7186 300deg 324deg, #1e2d40 324deg 360deg);
+      box-shadow: 0 0 0 4px rgba(4,8,16,0.35), inset 0 1px 1px rgba(255,255,255,0.16);
+      position: relative;
+      z-index: 2;
+    }
+    .spin-reel.spinning {
+      animation: spinReel 1.35s linear infinite;
+    }
+    .spin-footer {
+      align-items: flex-end;
+    }
+    .spin-track {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .spinner-levels {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .spinner-level-bar {
+      width: 3px;
+      height: 22px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--hifi-accent), rgba(124,199,217,0.42));
+      opacity: 0.6;
+      transform-origin: bottom;
+      transform: scaleY(var(--level, 0.16));
+      transition: transform 0.08s ease, opacity 0.08s ease;
+    }
+    .hifi-spin-panel.playing .spinner-level-bar {
+      opacity: 0.82;
+    }
+    .hifi-spin-panel.empty {
+      opacity: 0.58;
     }
     
     /* RETRO RACK DIAL KNOBS */
@@ -2758,10 +2813,14 @@
         max-height: 85vh;
         overflow-y: auto;
       }
+      .hifi-power-btn {
+        top: 0.85rem;
+        right: 0.85rem;
+      }
       .hifi-left {
         border-right: none;
         border-bottom: 1px solid rgba(139,157,195,0.1);
-        padding: 1.5rem;
+        padding: 4rem 1.5rem 1.5rem;
       }
       .hifi-right {
         padding: 1.5rem;
@@ -3801,17 +3860,34 @@
       
       <button class="hifi-eject-btn" id="hifi-eject-btn">EJECT</button>
       
-      <!-- VU Meters -->
-      <div class="hifi-vu-container">
-        <div class="vu-gauge">
-          <div class="vu-scale"></div>
-          <div class="vu-label">L</div>
-          <div class="vu-needle" id="vu-needle-left"></div>
+      <!-- Spinning cassette monitor -->
+      <div class="hifi-spin-panel empty" id="hifi-spin-panel">
+        <div class="spin-status-row">
+          <span>Playback monitor</span>
+          <span id="hifi-spin-status">Standby</span>
         </div>
-        <div class="vu-gauge">
-          <div class="vu-scale"></div>
-          <div class="vu-label right">R</div>
-          <div class="vu-needle" id="vu-needle-right"></div>
+        <div class="spin-cassette">
+          <div class="spin-reel-wrap">
+            <div class="spin-tape-wound" id="spin-tape-left"></div>
+            <div class="spin-reel" id="spin-reel-left"></div>
+          </div>
+          <div class="spin-reel-wrap">
+            <div class="spin-tape-wound" id="spin-tape-right"></div>
+            <div class="spin-reel" id="spin-reel-right"></div>
+          </div>
+        </div>
+        <div class="spin-footer">
+          <span class="spin-track" id="hifi-spin-track">No tape loaded</span>
+          <div class="spinner-levels" aria-hidden="true">
+            <span class="spinner-level-bar"></span>
+            <span class="spinner-level-bar"></span>
+            <span class="spinner-level-bar"></span>
+            <span class="spinner-level-bar"></span>
+            <span class="spinner-level-bar"></span>
+            <span class="spinner-level-bar"></span>
+            <span class="spinner-level-bar"></span>
+            <span class="spinner-level-bar"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -5682,6 +5758,11 @@ function setMusicPlayingUi(playing) {
   document.getElementById('reel-right')?.classList.toggle('spinning', playing);
   document.getElementById('deck-reel-left')?.classList.toggle('spinning', playing);
   document.getElementById('deck-reel-right')?.classList.toggle('spinning', playing);
+  document.getElementById('spin-reel-left')?.classList.toggle('spinning', playing);
+  document.getElementById('spin-reel-right')?.classList.toggle('spinning', playing);
+  document.getElementById('hifi-spin-panel')?.classList.toggle('playing', playing);
+  const spinStatus = document.getElementById('hifi-spin-status');
+  if (spinStatus) spinStatus.textContent = playing ? 'Rolling' : 'Standby';
   if (needles) needles.classList.toggle('playing', playing);
   if (cassette) cassette.classList.toggle('playing', playing);
 }
@@ -5819,6 +5900,11 @@ function initMusic() {
       const deckTapeR = document.getElementById('deck-tape-right');
       if (deckTapeL) deckTapeL.style.setProperty('--tape-size', `${Math.max(18, leftSize * 0.78)}px`);
       if (deckTapeR) deckTapeR.style.setProperty('--tape-size', `${Math.max(18, rightSize * 0.78)}px`);
+
+      const spinTapeL = document.getElementById('spin-tape-left');
+      const spinTapeR = document.getElementById('spin-tape-right');
+      if (spinTapeL) spinTapeL.style.setProperty('--tape-size', `${Math.max(28, leftSize * 1.18)}px`);
+      if (spinTapeR) spinTapeR.style.setProperty('--tape-size', `${Math.max(28, rightSize * 1.18)}px`);
     }
   });
   audio.addEventListener('ended', () => nextTrack());
@@ -5884,24 +5970,21 @@ function seekTo(val) {
 }
 
 function updateHifiVuMeters(dataArray) {
-  const leftNeedle = document.getElementById('vu-needle-left');
-  const rightNeedle = document.getElementById('vu-needle-right');
-  if (!leftNeedle || !rightNeedle) return;
+  const bars = Array.from(document.querySelectorAll('.spinner-level-bar'));
+  if (!bars.length) return;
 
   if (!dataArray || !isPlaying) {
-    leftNeedle.style.setProperty('--vu-rot', '-45deg');
-    rightNeedle.style.setProperty('--vu-rot', '-45deg');
+    bars.forEach((bar) => bar.style.setProperty('--level', '0.16'));
     return;
   }
 
-  const midpoint = Math.max(1, Math.floor(dataArray.length / 2));
-  const lowBins = dataArray.slice(0, midpoint);
-  const highBins = dataArray.slice(midpoint);
-  const avg = bins => bins.reduce((sum, value) => sum + value, 0) / Math.max(1, bins.length);
-  const leftLevel = Math.min(1, avg(lowBins) / 210);
-  const rightLevel = Math.min(1, avg(highBins) / 210);
-  leftNeedle.style.setProperty('--vu-rot', `${-45 + leftLevel * 88}deg`);
-  rightNeedle.style.setProperty('--vu-rot', `${-45 + rightLevel * 88}deg`);
+  const step = Math.max(1, Math.floor(dataArray.length / bars.length));
+  bars.forEach((bar, index) => {
+    const slice = dataArray.slice(index * step, (index + 1) * step);
+    const avg = slice.reduce((sum, value) => sum + value, 0) / Math.max(1, slice.length);
+    const level = Math.max(0.12, Math.min(1, avg / 220));
+    bar.style.setProperty('--level', level.toFixed(2));
+  });
 }
 
 // ═══════════════════════════════════════
@@ -6045,21 +6128,44 @@ function closeHifiPanel() {
 function syncHifiTapeState() {
   const deckTape = document.getElementById('deck-tape');
   const label = document.getElementById('deck-tape-label');
+  const spinPanel = document.getElementById('hifi-spin-panel');
+  const spinTrack = document.getElementById('hifi-spin-track');
+  const spinStatus = document.getElementById('hifi-spin-status');
   
   if (!playlist.length) {
     if (deckTape) deckTape.classList.add('empty');
     if (label) label.textContent = "No Tape";
+    if (spinPanel) {
+      spinPanel.classList.add('empty');
+      spinPanel.classList.remove('playing');
+    }
+    if (spinTrack) spinTrack.textContent = 'No tape loaded';
+    if (spinStatus) spinStatus.textContent = 'Standby';
+    document.getElementById('spin-reel-left')?.classList.remove('spinning');
+    document.getElementById('spin-reel-right')?.classList.remove('spinning');
+    updateHifiVuMeters(null);
     return;
   }
 
   if (deckTape) deckTape.classList.remove('empty');
+  if (spinPanel) {
+    spinPanel.classList.remove('empty');
+    spinPanel.classList.toggle('playing', isPlaying);
+  }
   if (label) {
     const track = playlist[currentTrack];
     label.textContent = track.name || 'Track ' + (currentTrack + 1);
   }
+  if (spinTrack) {
+    const track = playlist[currentTrack];
+    spinTrack.textContent = track.name || 'Track ' + (currentTrack + 1);
+  }
+  if (spinStatus) spinStatus.textContent = isPlaying ? 'Rolling' : 'Standby';
 
   document.getElementById('deck-reel-left')?.classList.toggle('spinning', isPlaying);
   document.getElementById('deck-reel-right')?.classList.toggle('spinning', isPlaying);
+  document.getElementById('spin-reel-left')?.classList.toggle('spinning', isPlaying);
+  document.getElementById('spin-reel-right')?.classList.toggle('spinning', isPlaying);
 }
 
 function toggleEject() {
