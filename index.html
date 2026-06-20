@@ -342,8 +342,8 @@
       height: 100%;
       object-fit: cover;
       z-index: 0;
-      filter: blur(4px) brightness(0.38) saturate(0.9);
-      transform: scale(1.03); /* Avoid white/transparent edges from the blur filter */
+      filter: blur(2px) brightness(0.42) saturate(0.92);
+      transform: scale(1.015); /* Avoid white/transparent edges from the blur filter */
     }
 
     .loading-overlay {
@@ -1785,9 +1785,20 @@
       box-shadow: 0 0 8px #ff3344, inset 0 1px 0 rgba(255,255,255,0.4);
       animation: ledPulse 1.2s infinite;
     }
+    .cassette.awaiting-autoplay {
+      animation: cassetteWakePulse 1.8s ease-in-out infinite;
+    }
+    .cassette.awaiting-autoplay .cassette-led {
+      background: var(--gold);
+      box-shadow: 0 0 10px rgba(201,168,124,0.75), inset 0 1px 0 rgba(255,255,255,0.35);
+    }
     @keyframes ledPulse {
       0%, 100% { opacity: 0.5; }
       50% { opacity: 1; }
+    }
+    @keyframes cassetteWakePulse {
+      0%, 100% { box-shadow: 0 12px 45px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 1px rgba(255,255,255,0.1); }
+      50% { box-shadow: 0 12px 45px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 26px rgba(201,168,124,0.34); }
     }
 
     .cassette-label {
@@ -3577,7 +3588,8 @@
 <div class="loading-screen" id="loading-screen">
   <!-- Dynamic blurred background video loop -->
   <video class="loading-bg-video" autoplay loop muted playsinline id="loading-video">
-    <source src="assets/video/intro.mp4" type="video/mp4">
+    <source src="assets/video/intro-optimized-mobile.mp4" type="video/mp4" media="(max-width: 680px)">
+    <source src="assets/video/intro-optimized-desktop.mp4" type="video/mp4">
   </video>
   <!-- Dark vignette overlay for contrast -->
   <div class="loading-overlay"></div>
@@ -4313,8 +4325,10 @@ function enterSite() {
   const hero = document.getElementById('hero');
   const heroInner = document.getElementById('hero-inner');
   if (ls) ls.classList.add('hidden');
+  window.dispatchEvent(new Event('saptaparna:rain-visibility-check'));
   if (heroInner) setTimeout(() => heroInner.classList.add('revealed'), 250);
   if (hero) setTimeout(() => hero.classList.add('scroll-ready'), 1800);
+  tryMusicAutoplayNow();
   setTimeout(tryMusicAutoplayNow, 350);
 }
 
@@ -4718,15 +4732,82 @@ function initPoetryPresence() {
 ═══════════════════════════════════════ */
 function initRain() {
   const canvas = document.getElementById('rain-canvas');
+  if (!canvas) return;
   const ctx    = canvas.getContext('2d');
+  if (!ctx) return;
+  const hero = document.getElementById('hero');
+  const stack = document.getElementById('panel-stack');
+  const loadingScreen = document.getElementById('loading-screen');
+  const debugRain = new URLSearchParams(window.location.search).get('debugRain') === '1';
+  let debugBadge = null;
   let W, H;
+  let rainFrame = null;
+  let rainActive = false;
+  let pageVisible = !document.hidden;
+
+  if (debugRain) {
+    debugBadge = document.createElement('div');
+    debugBadge.setAttribute('aria-live', 'polite');
+    debugBadge.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:99999;padding:8px 10px;border:1px solid rgba(201,168,124,.55);border-radius:999px;background:rgba(4,8,16,.82);color:#f6e8c8;font:600 11px/1.2 Lato,sans-serif;letter-spacing:.12em;text-transform:uppercase;pointer-events:none;';
+    debugBadge.textContent = 'Rain: checking';
+    document.body.appendChild(debugBadge);
+  }
 
   const resize = () => {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
   };
   resize();
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', () => {
+    resize();
+    updateRainActivity();
+  });
+
+  const heroIsVisible = () => {
+    if (!hero) return true;
+
+    if (stack && stack.dataset.stackReady === 'true') {
+      const viewportHeight = window.innerHeight || 1;
+      const stackProgress = Math.max(0, -stack.getBoundingClientRect().top / viewportHeight);
+      return stackProgress < 0.98;
+    }
+
+    const rect = hero.getBoundingClientRect();
+    return rect.bottom > 0 && rect.top < window.innerHeight;
+  };
+
+  const shouldAnimateRain = () => {
+    const loadingDone = !loadingScreen || loadingScreen.classList.contains('hidden');
+    return pageVisible && loadingDone && heroIsVisible();
+  };
+
+  const startRain = () => {
+    if (rainActive) return;
+    rainActive = true;
+    if (debugBadge) debugBadge.textContent = 'Rain: ON';
+    rainFrame = requestAnimationFrame(loop);
+  };
+
+  const stopRain = () => {
+    rainActive = false;
+    if (debugBadge) debugBadge.textContent = 'Rain: PAUSED';
+    if (rainFrame) {
+      cancelAnimationFrame(rainFrame);
+      rainFrame = null;
+    }
+  };
+
+  function updateRainActivity() {
+    if (shouldAnimateRain()) startRain();
+    else stopRain();
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    pageVisible = !document.hidden;
+    updateRainActivity();
+  });
+  window.addEventListener('scroll', updateRainActivity, { passive: true });
+  window.addEventListener('saptaparna:rain-visibility-check', updateRainActivity);
 
   /* ─────────────────────────────────────────────────────
      PERSPECTIVE DEPTH
@@ -4832,7 +4913,8 @@ function initRain() {
   /* ─────────────────────────────────────────────────────
      MAIN LOOP
   ───────────────────────────────────────────────────── */
-  (function loop() {
+  function loop() {
+    if (!rainActive) return;
     ctx.clearRect(0, 0, W, H);
 
     /* — FOG — */
@@ -4925,8 +5007,10 @@ function initRain() {
       drawLeaf(lf, a);
     });
 
-    requestAnimationFrame(loop);
-  })();
+    rainFrame = requestAnimationFrame(loop);
+  }
+
+  updateRainActivity();
 }
 function openLightbox(src, cap) {
   document.getElementById('lb-img').src = src;
@@ -5608,6 +5692,7 @@ let animationFrameId = null;
 let webAudioFailed = false;
 const MUSIC_STATE_KEY = 'saptaparna_music_state_v1';
 let musicAutoplayAttempted = false;
+let musicAutoplayInFlight = false;
 
 function initWebAudioVisualizer() {
   const audio = document.getElementById('bg-audio');
@@ -5754,6 +5839,7 @@ function setMusicPlayingUi(playing) {
   const cassette = document.getElementById('cassette');
   isPlaying = playing;
   if (btn) btn.textContent = playing ? '⏸' : '▶';
+  if (playing) document.getElementById('cassette')?.classList.remove('awaiting-autoplay');
   document.getElementById('reel-left')?.classList.toggle('spinning', playing);
   document.getElementById('reel-right')?.classList.toggle('spinning', playing);
   document.getElementById('deck-reel-left')?.classList.toggle('spinning', playing);
@@ -5814,23 +5900,58 @@ function pauseCurrentTrack() {
   saveMusicState();
 }
 
+function introIsFinished() {
+  const loadingScreen = document.getElementById('loading-screen');
+  return introComplete && (!loadingScreen || loadingScreen.classList.contains('hidden'));
+}
+
+function setMusicAutoplayWaiting(waiting) {
+  const cassette = document.getElementById('cassette');
+  if (!cassette) return;
+  cassette.classList.toggle('awaiting-autoplay', Boolean(waiting && !isPlaying && introIsFinished() && playlist.length));
+}
+
+function runMusicAutoplayAttempt() {
+  if (musicAutoplayAttempted || musicAutoplayInFlight || isPlaying || !playlist.length) return;
+  musicAutoplayInFlight = true;
+  setMusicAutoplayWaiting(false);
+  playCurrentTrack({ autoplay: true }).then(started => {
+    musicAutoplayInFlight = false;
+    if (started) {
+      musicAutoplayAttempted = true;
+      setMusicAutoplayWaiting(false);
+      removeMusicAutoplayListeners();
+    } else {
+      setMusicAutoplayWaiting(true);
+    }
+  }).catch(() => {
+    musicAutoplayInFlight = false;
+    setMusicAutoplayWaiting(true);
+  });
+}
+
 function attemptMusicAutoplay(e) {
   if (e?.target?.closest('#music-player, .hifi-overlay, button, input, textarea, select, a')) {
     return;
   }
-  if (musicAutoplayAttempted || isPlaying || !playlist.length) return;
-  musicAutoplayAttempted = true;
-  playCurrentTrack({ autoplay: true });
+  if (!introIsFinished()) return;
+  runMusicAutoplayAttempt();
 }
 
 function tryMusicAutoplayNow() {
-  if (isPlaying || !playlist.length) return;
-  playCurrentTrack({ autoplay: true });
+  if (!introIsFinished()) return;
+  runMusicAutoplayAttempt();
+}
+
+function removeMusicAutoplayListeners() {
+  document.removeEventListener('pointerdown', attemptMusicAutoplay);
+  document.removeEventListener('keydown', attemptMusicAutoplay);
 }
 
 function primeMusicAutoplay() {
-  document.addEventListener('pointerdown', attemptMusicAutoplay, { once: true, passive: true });
-  document.addEventListener('keydown', attemptMusicAutoplay, { once: true });
+  removeMusicAutoplayListeners();
+  document.addEventListener('pointerdown', attemptMusicAutoplay, { passive: true });
+  document.addEventListener('keydown', attemptMusicAutoplay);
 }
 
 function initMusic() {
