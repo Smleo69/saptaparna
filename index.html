@@ -1368,6 +1368,7 @@
       font-size: 0.95rem;
       color: var(--text-soft);
       line-height: 1.7;
+      white-space: pre-line;
       overflow-wrap: anywhere;
     }
     .recent-more-wrap { text-align: center; margin-top: 2.5rem; display: none; }
@@ -1478,7 +1479,7 @@
     .all-poems-month { font-family: 'Lato', sans-serif; font-size: 0.55rem; letter-spacing: 0.15em; color: var(--text-soft); text-transform: uppercase; }
     .all-poems-info { min-width: 0; }
     .all-poems-info h4 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1rem; color: var(--pearl); margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .all-poems-info p { font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; color: var(--text-soft); overflow-wrap: anywhere; }
+    .all-poems-info p { font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; color: var(--text-soft); white-space: pre-line; overflow-wrap: anywhere; }
     .all-poems-empty {
       text-align: center;
       color: var(--text-soft);
@@ -5046,14 +5047,13 @@ function isNew(poemOrDate) {
 function fmtDate(d) {
   return new Date(d+'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
 }
-function getPoemExcerpt(content, maxLength = 150) {
-  const text = String(content || '')
+function getPoemExcerpt(content, maxLines = 4) {
+  const lines = String(content || '')
     .split('\n')
     .map(line => line.trim())
-    .filter(Boolean)
-    .join(' / ');
-  if (!text) return 'A quiet poem is waiting to be read.';
-  return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
+    .filter(Boolean);
+  if (!lines.length) return 'A quiet poem is waiting to be read.';
+  return lines.slice(0, maxLines).join('\n');
 }
 
 /* ═══════════════════════════════════════
@@ -5161,7 +5161,7 @@ function buildPoems() {
       ${isNew(p) ? '<span class="poem-badge">New</span>' : ''}
       <p class="poem-date">${fmtDate(p.date)}</p>
       <h3 class="poem-title">${escapeHtml(p.title)}</h3>
-      <p class="poem-text">${escapeHtml(getPoemExcerpt(p.content, 230))}</p>
+      <p class="poem-text">${escapeHtml(getPoemExcerpt(p.content, 4))}</p>
       <span class="poem-open-cue">Read poem</span>`;
     card.addEventListener('click', () => openPoemReader(i));
     grid.appendChild(card);
@@ -5201,7 +5201,7 @@ function buildRecent() {
       <div class="recent-sep"></div>
       <div class="recent-body">
         <h3>${escapeHtml(p.title)}${isNew(p)?' <span class="poem-badge" style="font-size:0.52rem;padding:0.15rem 0.5rem">New</span>':''}</h3>
-        <p class="recent-excerpt">${escapeHtml(getPoemExcerpt(p.content, 90))}</p>
+        <p class="recent-excerpt">${escapeHtml(getPoemExcerpt(p.content, 2))}</p>
       </div>`;
     list.appendChild(item);
   });
@@ -5235,7 +5235,7 @@ function openAllPoems(startIndex = POETRY_FEATURED_LIMIT) {
       </div>
       <div class="all-poems-info">
         <h4>${escapeHtml(p.title)}</h4>
-        <p>${escapeHtml(getPoemExcerpt(p.content, 80))}</p>
+        <p>${escapeHtml(getPoemExcerpt(p.content, 2))}</p>
       </div>
     `;
     item.addEventListener('click', () => openPoemReader(poemIndex));
