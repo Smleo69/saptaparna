@@ -4,11 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>For You, Saptaparna ✦</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Lato:wght@200;300;400&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/vendor/gsap-3.12.5.min.js"></script>
+  <script src="assets/vendor/supabase.js"></script>
   <style>
+    #content-status { position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9500;background:#142338;color:#f5e6d0;padding:12px 18px;border-radius:12px;max-width:90vw; }
+    #content-status[hidden] { display:none; }
+    #content-status button { color:inherit;background:transparent;border:1px solid currentColor;border-radius:6px;padding:6px;cursor:pointer; }
+    #letter-body { max-height:34svh;overflow-y:auto;overscroll-behavior:contain; }
     :root {
       --deep: #040810;
       --storm: #080f1c;
@@ -87,7 +92,7 @@
       inset: 0 auto auto 0;
       width: 1px;
       height: 1px;
-      z-index: 10050;
+      z-index: 20001;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.22s ease;
@@ -145,7 +150,7 @@
       width: 8px;
       height: 8px;
       pointer-events: none;
-      z-index: 10049;
+      z-index: 20000;
       border-radius: 50%;
       border: 1px solid rgba(201,168,124,0.62);
       transform: translate3d(-50%, -50%, 0) scale(0.6);
@@ -3614,6 +3619,7 @@
   </div>
 </div>
 
+<div id="content-status" role="status" hidden>Some memories couldn’t load. <button type="button" onclick="refreshSiteContent()">Try again</button></div>
 <main id="panel-stack" aria-label="Saptaparna scroll story">
 
 <!-- ① HERO -->
@@ -3753,7 +3759,7 @@
 <!-- FOOTER -->
 <footer class="stack-panel">
   <div class="footer-scene">
-    <img src="assets/photos/footer-monsoon.png" alt="" loading="lazy">
+    <img src="assets/photos/footer-monsoon.webp" width="1672" height="941" alt="" loading="lazy">
     <div class="footer-leaves" aria-hidden="true">
       <span class="footer-leaf" style="--x:8%;--s:1.35rem;--dur:28s;--delay:-6s;--r0:-28deg;--m1:34px;--m2:-18px;--m3:42px;--dx:58px;">🍁</span>
       <span class="footer-leaf" style="--x:18%;--s:1.08rem;--dur:33s;--delay:-19s;--r0:16deg;--m1:-26px;--m2:20px;--m3:-36px;--dx:-52px;">🍁</span>
@@ -3980,10 +3986,12 @@
         <h2>Secret Garden</h2>
         <p class="sub">All words here are yours — write, edit, remove</p>
       </div>
+      <button class="admin-poem-btn" style="width:auto;padding:0 12px" onclick="signOutAdmin()">Sign out</button>
       <button class="admin-close-btn" onclick="closeAdmin()" title="Close">×</button>
     </div>
     <div class="admin-body">
       <nav class="admin-sidebar">
+        <button class="admin-tab" onclick="retryFileCleanup()">Retry file cleanup</button>
         <button class="admin-tab active" onclick="switchTab('poem',this)">
           <span class="tab-icon">✦</span> Add Poem
         </button>
@@ -4153,7 +4161,11 @@ const loadingQuotes = [
 const SUPABASE_URL = "https://augahstyrbwmzbcikvyh.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_-HEAKTZHq2kqTO8wIVe5DQ_hkcrB7cO";
 const ADMIN_EMAIL = "smleo4411@gmail.com";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function localDateValue() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 const defaultPoems = [];
 
@@ -4228,14 +4240,21 @@ function showDataError(context, error, notify = true) {
 }
 
 async function loadSiteData() {
+  if (!supabaseClient) {
+    supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (!supabaseClient) throw new Error('Connection library unavailable. Please reload the page.');
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
   const [galleryRes, poemsRes, settingsRes, musicRes] = await Promise.all([
-    supabaseClient.from('gallery_items').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
-    supabaseClient.from('poems').select('*').order('written_on', { ascending: false }).order('created_at', { ascending: false }),
-    supabaseClient.from('site_settings').select('key,value'),
-    supabaseClient.from('music_tracks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false })
+    supabaseClient.from('gallery_items').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }).abortSignal(controller.signal),
+    supabaseClient.from('poems').select('*').order('written_on', { ascending: false }).order('created_at', { ascending: false }).abortSignal(controller.signal),
+    supabaseClient.from('site_settings').select('key,value').abortSignal(controller.signal),
+    supabaseClient.from('music_tracks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }).abortSignal(controller.signal)
   ]);
 
-  if (!galleryRes.error && galleryRes.data.length) {
+  if (!galleryRes.error) {
     galleryData = galleryRes.data.map(item => ({
       id: item.id,
       image_path: item.image_path,
@@ -4267,6 +4286,9 @@ async function loadSiteData() {
       name: track.name || 'Track'
     }));
   } else showDataError('Music load', musicRes.error, false);
+  const failure = [galleryRes, poemsRes, settingsRes, musicRes].find(r => r.error);
+  if (failure) throw failure.error;
+  } finally { clearTimeout(timeout); }
 }
 
 /* ═══════════════════════════════════════
@@ -4283,44 +4305,47 @@ function showAdminToast(msg) {
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
-window.addEventListener('DOMContentLoaded', async () => {
-  const loadingQuoteEl = document.getElementById('loading-quote');
-  if (loadingQuoteEl)
-    loadingQuoteEl.textContent = loadingQuotes[Math.floor(Math.random() * loadingQuotes.length)];
-
-  initPanelStack();
-  initCustomCursor();
-
+let contentLoadInFlight = false;
+async function refreshSiteContent() {
+  if (contentLoadInFlight) return;
+  contentLoadInFlight = true;
+  const notice = document.getElementById('content-status');
+  const retry = notice.querySelector('button');
+  retry.disabled = true;
   try {
     await loadSiteData();
-    initRain();
-    buildGallery();
-    buildPoems();
-    buildRecent();
-    initLetter();
-    initReveal();
-    initHeroEntrance();
-    initPoetryPresence();
-    initMusic();
-    initHifiPanel();
-    initKonami();
-    if (shouldOpenAdminFromUrl()) {
-      setTimeout(() => {
-        enterSite();
-        showPwModal();
-      }, 300);
+    buildGallery(); buildPoems(); buildRecent();
+    const body = document.getElementById('letter-body');
+    letterAnimationVersion++;
+    body.replaceChildren();
+    const cursor = document.createElement('span'); cursor.id = 'letter-cursor'; body.appendChild(cursor);
+    letterStarted = false; initLetter();
+    if (playlist.length) {
+      const saved = getSavedMusicState();
+      const selected = playlist.findIndex(t => t.id === saved.id);
+      loadTrack(selected >= 0 ? selected : Math.min(saved.track || 0, playlist.length - 1));
+      tryMusicAutoplayNow();
     }
-    document.getElementById('letter-date-el').textContent =
-      new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
-    document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
-  } catch(e) { console.error('Init error:', e); }
-
-  setTimeout(() => {
-    const enterBtn = document.getElementById('loading-enter');
-    if (enterBtn) enterBtn.classList.add('visible');
-  }, 2500);
-
+    notice.hidden = true;
+  } catch (e) {
+    console.error('Content load:', e);
+    notice.hidden = false;
+  } finally { contentLoadInFlight = false; retry.disabled = false; }
+}
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loading-quote').textContent = loadingQuotes[Math.floor(Math.random() * loadingQuotes.length)];
+  setTimeout(() => document.getElementById('loading-enter')?.classList.add('visible'), 2500);
   setTimeout(enterSite, 7000);
+  // Independent UI features must not wait for network requests.
+  [initPanelStack, initCustomCursor, initRain, initReveal, initHeroEntrance,
+   initPoetryPresence, initMusic, initHifiPanel, initKonami, initDialogManager,
+   initAccessibleControls].forEach(init => {
+    try { init(); } catch (e) { console.error('Feature initialization:', init.name, e); }
+  });
+  document.getElementById('letter-date-el').textContent = new Date().toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('a-date').value = localDateValue();
+  refreshSiteContent();
+  if (shouldOpenAdminFromUrl()) setTimeout(() => { enterSite(); showPwModal(); }, 300);
 });
 
 function enterSite() {
@@ -4330,6 +4355,7 @@ function enterSite() {
   const hero = document.getElementById('hero');
   const heroInner = document.getElementById('hero-inner');
   if (ls) ls.classList.add('hidden');
+  document.getElementById('loading-video')?.pause();
   window.dispatchEvent(new Event('saptaparna:rain-visibility-check'));
   if (heroInner) setTimeout(() => heroInner.classList.add('revealed'), 250);
   if (hero) setTimeout(() => hero.classList.add('scroll-ready'), 1800);
@@ -4378,7 +4404,8 @@ function initCustomCursor() {
     setTransform(dot, mouseX, mouseY);
     setTransform(ring, ringX, ringY);
     setTransform(glow, glowX, glowY);
-    requestAnimationFrame(animate);
+    if (!document.hidden && (Math.abs(mouseX-ringX)+Math.abs(mouseY-ringY)+Math.abs(mouseX-glowX)+Math.abs(mouseY-glowY)) > 0.2) requestAnimationFrame(animate);
+    else started = false;
   };
 
   const updateMode = (target) => {
@@ -4450,7 +4477,7 @@ function initHeroEntrance() {
       const rect = heroEl.getBoundingClientRect();
       const px = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
       const py = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-      gsap.to(portrait, { x: px * -15, y: py * -10, scale: 1.05, duration: 1.2, ease: 'power2.out' });
+      window.gsap?.to(portrait, { x: px * -15, y: py * -10, scale: 1.05, duration: 1.2, ease: 'power2.out' });
     });
   }
 
@@ -4460,7 +4487,7 @@ function initHeroEntrance() {
     heroEl.addEventListener('mouseenter', () => { heart.style.opacity = '0.7'; });
     heroEl.addEventListener('mouseleave', () => { heart.style.opacity = '0'; });
     heroEl.addEventListener('mousemove', (e) => {
-      gsap.to(heart, { left: e.clientX - 8, top: e.clientY - 8, duration: 0.3, ease: 'power2.out' });
+      window.gsap?.to(heart, { left: e.clientX - 8, top: e.clientY - 8, duration: 0.3, ease: 'power2.out' });
     });
   }
 
@@ -4681,6 +4708,7 @@ function initPanelStack() {
       panel.style.zIndex = String(z);
       panel.classList.toggle('stack-filtering', blur > 0.05);
       if (delta > -0.98 && delta < 1.25) revealPanelContent(panel);
+      panel.inert = index !== activeIndex;
       panel.style.pointerEvents = index === activeIndex ? 'auto' : 'none';
     });
 
@@ -5022,12 +5050,12 @@ function openLightbox(src, cap) {
   document.getElementById('lb-img').alt = cap ? `Memory photo: ${cap}` : 'Memory photo';
   document.getElementById('lb-caption').textContent = cap || 'Some memories are too soft for words.';
   document.getElementById('lightbox').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  syncDialogs();
 }
 function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
   if (!document.getElementById('gallery-archive').classList.contains('open')) {
-    document.body.style.overflow = '';
+    syncDialogs();
   }
 }
 
@@ -5127,14 +5155,14 @@ function buildGalleryArchive() {
 function openGalleryArchive() {
   buildGalleryArchive();
   document.getElementById('gallery-archive').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  syncDialogs();
   initReveal();
 }
 
 function closeGalleryArchive() {
   document.getElementById('gallery-archive').classList.remove('open');
   if (!document.getElementById('lightbox').classList.contains('open')) {
-    document.body.style.overflow = '';
+    syncDialogs();
   }
 }
 
@@ -5252,12 +5280,12 @@ function openAllPoems(startIndex = POETRY_FEATURED_LIMIT) {
     list.appendChild(item);
   });
   overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  syncDialogs();
 }
 function closeAllPoems() {
   document.getElementById('all-poems-overlay').classList.remove('open');
   if (!document.getElementById('poem-reader-overlay').classList.contains('open')) {
-    document.body.style.overflow = '';
+    syncDialogs();
   }
 }
 function openPoemReader(poemIndex) {
@@ -5268,12 +5296,12 @@ function openPoemReader(poemIndex) {
   document.getElementById('poem-reader-text').textContent = poem.content;
   document.getElementById('poem-reader-new').style.display = isNew(poem) ? 'inline-block' : 'none';
   document.getElementById('poem-reader-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  syncDialogs();
 }
 function closePoemReader() {
   document.getElementById('poem-reader-overlay').classList.remove('open');
   if (!document.getElementById('all-poems-overlay').classList.contains('open')) {
-    document.body.style.overflow = '';
+    syncDialogs();
   }
 }
 
@@ -5281,11 +5309,13 @@ function closePoemReader() {
    LETTER TYPEWRITER
 ═══════════════════════════════════════ */
 let letterStarted = false;
+let letterAnimationVersion = 0;
 function initLetter() {
   const obs = new IntersectionObserver(entries => {
     entries.forEach(e => {
       if (e.isIntersecting && !letterStarted) {
         letterStarted = true;
+        obs.disconnect();
         typewrite(document.getElementById('letter-body'), document.getElementById('letter-cursor'), letterText, 16);
       }
     });
@@ -5293,14 +5323,17 @@ function initLetter() {
   obs.observe(document.getElementById('letter'));
 }
 function typewrite(el, cursor, text, speed=15) {
+  const version = ++letterAnimationVersion;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = text; return; }
   let i = 0;
   cursor.style.display = 'inline-block';
   function type() {
+    if (version !== letterAnimationVersion) return;
     if (i < text.length) {
       el.insertBefore(document.createTextNode(text[i]), cursor);
       i++;
       setTimeout(type, speed);
-    }
+    } else { cursor.style.display = 'none'; }
   }
   type();
 }
@@ -5329,6 +5362,7 @@ let pendingGalleryImage = null;
 function previewGalleryImage(input) {
   const file = input.files[0];
   if (!file || !file.type.startsWith('image/')) return;
+  if (file.size > 20 * 1024 * 1024) { showAdminToast('Choose a photo smaller than 20 MB.'); input.value = ''; return; }
   pendingGalleryFile = file;
   const reader = new FileReader();
   reader.onload = e => {
@@ -5366,7 +5400,8 @@ async function saveGalleryImage() {
 
   // Use a clean filename with .jpg extension (since canvas.toBlob compresses to image/jpeg)
   const safeName = pendingGalleryFile.name.replace(/\.[^/.]+$/, "").replace(/[^a-z0-9._-]/gi, '-');
-  const path = `gallery/${Date.now()}-${safeName}.jpg`;
+  const ext = fileToUpload.type === 'image/jpeg' ? 'jpg' : (pendingGalleryFile.name.split('.').pop() || 'img').replace(/[^a-z0-9]/gi, '');
+  const path = `gallery/${crypto.randomUUID()}-${safeName}.${ext}`;
 
   const upload = await supabaseClient.storage.from('memories').upload(path, fileToUpload, { upsert: false });
   if (upload.error) {
@@ -5384,7 +5419,7 @@ async function saveGalleryImage() {
     sort_order: galleryData.length
   }).select().single();
   if (insert.error) {
-    await supabaseClient.storage.from('memories').remove([path]);
+    await removeStoredFile('memories', path);
     showDataError('Photo save', insert.error);
     if (saveBtn) {
       saveBtn.disabled = false;
@@ -5422,12 +5457,12 @@ async function deleteGalleryImage(index) {
   if (!item || !item.id) return;
   const removed = await supabaseClient.from('gallery_items').delete().eq('id', item.id);
   if (removed.error) { showDataError('Photo delete', removed.error); return; }
-  if (item.image_path) await supabaseClient.storage.from('memories').remove([item.image_path]);
-  galleryData.splice(index, 1);
+  const cleanupOk = await removeStoredFile('memories', item.image_path);
+  galleryData.splice(galleryData.indexOf(item), 1);
   buildGallery();
   if (document.getElementById('gallery-archive').classList.contains('open')) buildGalleryArchive();
   renderAdminGalleryList();
-  showAdminToast('Photo removed');
+  showAdminToast(cleanupOk ? 'Photo removed' : 'Photo removed; file cleanup failed. Retry cleanup in admin.');
 }
 function renderAdminGalleryList() {
   const container = document.getElementById('admin-gallery-list');
@@ -5437,7 +5472,7 @@ function renderAdminGalleryList() {
   }
   container.innerHTML = galleryData.map((img,i) => `
     <div style="position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--cloud);">
-      <img src="${img.src}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;">
+      <img src="${escapeAttribute(safeMediaUrl(img.src))}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;">
       <button onclick="deleteGalleryImage(${i})" style="position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(160,80,80,0.8);color:white;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;">×</button>
       
       <!-- Reorder controls -->
@@ -5451,26 +5486,24 @@ function renderAdminGalleryList() {
 }
 
 async function moveGalleryItem(index, direction) {
-  const targetIndex = index + direction;
-  if (targetIndex < 0 || targetIndex >= galleryData.length) return;
-
-  const temp = galleryData[index];
-  galleryData[index] = galleryData[targetIndex];
-  galleryData[targetIndex] = temp;
-
-  buildGallery();
-  if (document.getElementById('gallery-archive').classList.contains('open')) buildGalleryArchive();
-  renderAdminGalleryList();
-
+  const items = galleryData;
+  const target = index + direction;
+  if (target < 0 || target >= items.length) return;
+  const before = items.slice();
+  const activeId = playlist[currentTrack]?.id;
+  [items[index], items[target]] = [items[target], items[index]];
   try {
-    const promises = galleryData.map((item, idx) => {
-      return supabaseClient.from('gallery_items').update({ sort_order: idx }).eq('id', item.id);
-    });
-    const results = await Promise.all(promises);
-    const failed = results.find(r => r.error);
-    if (failed) console.error('Failed to save some sort orders:', failed.error);
-  } catch (err) {
-    console.error('Failed to save sort orders:', err);
+    await persistOrder('gallery_items', items);
+    showAdminToast('Order saved');
+  } catch (error) {
+    items.splice(0, items.length, ...before);
+    try { await persistOrder('gallery_items', before); }
+    catch { showAdminToast('Order could not be restored. Reload before editing again.'); throw error; }
+    showAdminToast('Order was not saved. Please try again.');
+  } finally {
+    const selected = playlist.findIndex(t => t.id === activeId);
+    if (selected >= 0) currentTrack = selected;
+    buildGallery(); renderAdminGalleryList(); initReveal();
   }
 }
 
@@ -5496,31 +5529,72 @@ function shouldOpenAdminFromUrl() {
 }
 function initKonami() {
   document.addEventListener('keydown', e => {
+    // Typing inside a form must never trigger the admin shortcut.
+    if (e.target.closest('input, textarea, select, [contenteditable="true"]')) {
+      kSeq = [];
+      return;
+    }
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     kSeq.push(key);
     if (kSeq.length > KONAMI.length) kSeq.shift();
-    if (JSON.stringify(kSeq) === JSON.stringify(KONAMI)) showPwModal();
-    if (key === 'Escape') { closeLightbox(); closeGalleryArchive(); closeAdmin(); closePwModal(); closeAllPoems(); closePoemReader(); }
+    if (JSON.stringify(kSeq) === JSON.stringify(KONAMI)) {
+      // Cancel insertion before opening a dialog that moves keyboard focus.
+      e.preventDefault();
+      kSeq = [];
+      showPwModal();
+    }
   });
 }
-function showPwModal() {
+let adminEntryPending = false;
+async function showPwModal() {
+  if (adminEntryPending || document.getElementById('admin-modal').classList.contains('open')) return;
+  adminEntryPending = true;
+  try {
+    // Reuse an active admin session; Supabase policies still authorize every write.
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (!error && data?.session?.user?.email === ADMIN_EMAIL) {
+        openAdmin();
+        return;
+      }
+    }
+  } catch (error) {
+    console.warn('Unable to restore admin session:', error.message);
+  } finally {
+    adminEntryPending = false;
+  }
   document.getElementById('pw-modal').classList.add('open');
   document.getElementById('pw-email').value = ADMIN_EMAIL;
   document.getElementById('pw-input').value = '';
   document.getElementById('pw-err').style.display = 'none';
   setTimeout(() => document.getElementById('pw-input').focus(), 100);
 }
-function closePwModal() { document.getElementById('pw-modal').classList.remove('open'); }
+function closePwModal() { document.getElementById('pw-input').value = ''; document.getElementById('pw-modal').classList.remove('open'); }
 async function checkPw() {
   const email = document.getElementById('pw-email').value.trim() || ADMIN_EMAIL;
   const password = document.getElementById('pw-input').value;
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  const errorEl = document.getElementById('pw-err');
+  errorEl.style.display = 'none';
+  if (!email || !password) {
+    errorEl.textContent = 'Enter your admin email and password.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  let error;
+  try {
+    ({ error } = await supabaseClient.auth.signInWithPassword({ email, password }));
+  } catch (cause) {
+    error = cause;
+  }
   if (error) {
-    document.getElementById('pw-err').style.display = 'block';
-    document.getElementById('pw-input').value = '';
+    const code = error.code || error.status || '';
+    errorEl.textContent = `Sign-in failed: ${error.message || 'Unable to reach the sign-in service.'}${code ? ` (${code})` : ''}`;
+    errorEl.style.display = 'block';
     document.getElementById('pw-input').focus();
     return;
   }
+  document.getElementById('pw-input').value = '';
   closePwModal();
   openAdmin();
 }
@@ -5530,6 +5604,12 @@ function openAdmin() {
   document.getElementById('a-title').focus();
 }
 function closeAdmin() { document.getElementById('admin-modal').classList.remove('open'); }
+
+async function signOutAdmin() {
+  const {error} = await supabaseClient.auth.signOut({scope:'local'});
+  closeAdmin(); closePwModal();
+  showAdminToast(error ? 'Signed out locally. Server logout could not be confirmed.' : 'Signed out');
+}
 
 /* ═══════════════════════════════════════
    PUBLISH POEM
@@ -5548,7 +5628,7 @@ async function publishPoem() {
   savedPoems.unshift({ id: data.id, title: data.title, date: data.written_on, content: data.content, createdAt: data.created_at || new Date().toISOString() });
   document.getElementById('a-title').value = '';
   document.getElementById('a-content').value = '';
-  document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('a-date').value = localDateValue();
   closeAdmin();
   buildPoems();
   buildRecent();
@@ -5564,6 +5644,7 @@ function switchTab(tabName, btn) {
   document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-'+tabName).style.display = 'block';
   btn.classList.add('active');
+  if (tabName === 'poem' && editingPoemId) { editingPoemId = null; document.getElementById('a-title').value = ''; document.getElementById('a-content').value = ''; document.querySelector('#tab-poem .btn-publish').textContent = 'Publish ✦'; document.querySelector('#tab-poem .btn-publish').setAttribute('onclick','publishPoem()'); }
   if (tabName === 'manage') renderAdminPoemsList();
   if (tabName === 'music') openMusicAdminTab();
   if (tabName === 'gallery') renderAdminGalleryList();
@@ -5602,6 +5683,15 @@ function renderAdminPoemsList() {
       </div>`;
     container.appendChild(item);
   });
+}
+function escapeAttribute(value) {
+  return String(value || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function safeMediaUrl(value) {
+  try {
+    const url = new URL(value, location.href);
+    return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
+  } catch { return ''; }
 }
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -5642,7 +5732,7 @@ async function updatePoem() {
   poems[index] = { id: editingPoemId, title, date, content, createdAt: poems[index].createdAt };
   document.getElementById('a-title').value = '';
   document.getElementById('a-content').value = '';
-  document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('a-date').value = localDateValue();
   editingPoemId = null;
   document.querySelector('#tab-poem .btn-publish').textContent = 'Publish ✦';
   document.querySelector('#tab-poem .btn-publish').setAttribute('onclick', 'publishPoem()');
@@ -5817,7 +5907,7 @@ function stopEqVisualizer() {
 
 function getSavedMusicState() {
   try {
-    return JSON.parse(localStorage.getItem(MUSIC_STATE_KEY) || '{}');
+    return JSON.parse(localStorage.getItem(MUSIC_STATE_KEY) || '{}') || {};
   } catch (e) {
     return {};
   }
@@ -5828,6 +5918,7 @@ function saveMusicState() {
   try {
     localStorage.setItem(MUSIC_STATE_KEY, JSON.stringify({
       track: currentTrack,
+      id: playlist[currentTrack]?.id,
       updatedAt: Date.now()
     }));
   } catch (e) {}
@@ -5897,6 +5988,8 @@ function playCurrentTrack(options = {}) {
 }
 
 function pauseCurrentTrack() {
+  musicAutoplayAttempted = true;
+  removeMusicAutoplayListeners();
   const audio = document.getElementById('bg-audio');
   if (audio) audio.pause();
   setMusicPlayingUi(false);
@@ -5961,7 +6054,8 @@ function primeMusicAutoplay() {
 function initMusic() {
   if (playlist.length) {
     const saved = getSavedMusicState();
-    const savedTrack = Number.isInteger(saved.track) ? saved.track : 0;
+    const selected = playlist.findIndex(t => t.id === saved.id);
+    const savedTrack = selected >= 0 ? selected : Number.isInteger(saved.track) ? saved.track : 0;
     loadTrack(Math.min(Math.max(savedTrack, 0), playlist.length - 1));
   }
 
@@ -5976,6 +6070,7 @@ function initMusic() {
     volumeSlider.addEventListener('input', (e) => {
       const vol = e.target.value / 100;
       audio.volume = vol;
+      document.getElementById('knob-volume')?.style.setProperty('--rot', `${-135+vol*270}deg`);
       if (volumeToggle) {
         if (vol === 0) volumeToggle.textContent = '🔇';
         else if (vol < 0.3) volumeToggle.textContent = '🔈';
@@ -6032,7 +6127,29 @@ function initMusic() {
       if (spinTapeR) spinTapeR.style.setProperty('--tape-size', `${Math.max(28, rightSize * 1.18)}px`);
     }
   });
-  audio.addEventListener('ended', () => nextTrack());
+  // Headsets, browser controls, and OS media keys can change playback directly.
+  audio.addEventListener('play', () => {
+    musicAutoplayAttempted = true;
+    removeMusicAutoplayListeners();
+    setMusicPlayingUi(true);
+    initWebAudioVisualizer();
+  });
+  audio.addEventListener('pause', () => {
+    musicAutoplayAttempted = true;
+    removeMusicAutoplayListeners();
+    setMusicPlayingUi(false);
+    stopEqVisualizer();
+  });
+  audio.addEventListener('error', () => {
+    setMusicPlayingUi(false);
+    stopEqVisualizer();
+  });
+  audio.addEventListener('ended', () => {
+    setMusicPlayingUi(false);
+    stopEqVisualizer();
+    loadTrack(currentTrack + 1);
+    if (playlist.length) playCurrentTrack();
+  });
   primeMusicAutoplay();
 }
 
@@ -6079,6 +6196,8 @@ function loadTrack(i) {
 }
 
 function togglePlay() {
+  musicAutoplayAttempted = true;
+  removeMusicAutoplayListeners();
   if (!playlist.length) return;
   if (isPlaying) {
     pauseCurrentTrack();
@@ -6095,6 +6214,7 @@ function seekTo(val) {
 }
 
 function updateHifiVuMeters(dataArray) {
+  if (!hifiOpen && dataArray) return;
   const bars = Array.from(document.querySelectorAll('.spinner-level-bar'));
   if (!bars.length) return;
 
@@ -6135,6 +6255,18 @@ function initHifiPanel() {
 
   if (!player) return;
 
+  // The cassette shell is keyboard-accessible without adding a visible control.
+  const shell = document.getElementById('cassette');
+  shell.tabIndex = 0;
+  shell.setAttribute('role', 'group');
+  shell.setAttribute('aria-label', 'Cassette player. Press Enter to open the expanded player.');
+  shell.addEventListener('keydown', e => {
+    if (e.target === shell && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      openHifiPanel();
+    }
+  });
+
   // Double click on the player shell to expand.
   player.addEventListener('dblclick', (e) => {
     if (e.target.closest('.cassette-btn') || e.target.closest('.volume-icon') || e.target.closest('.volume-slider')) {
@@ -6168,7 +6300,7 @@ function initHifiPanel() {
   }
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && hifiOpen) closeHifiPanel();
+
   });
 
   if (ejectBtn) {
@@ -6182,7 +6314,7 @@ function initHifiPanel() {
   }
 
   // Bind Hi-Fi Knobs
-  const initialVol = parseFloat(document.getElementById('bg-audio').volume || 0.7);
+  const initialVol = document.getElementById('bg-audio').volume;
   const initialVolRot = -135 + initialVol * 270;
   
   bindHifiKnob('knob-volume', (val) => {
@@ -6328,7 +6460,7 @@ function buildJcardPlaylist() {
   container.innerHTML = playlist.map((track, i) => {
     const activeClass = (i === currentTrack) ? 'active' : '';
     return `
-      <div class="jcard-track-item ${activeClass}" onclick="playJcardTrack(${i})">
+      <div class="jcard-track-item ${activeClass}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();playJcardTrack(${i})}" onclick="playJcardTrack(${i})">
         <span class="jcard-track-num">${String(i + 1).padStart(2, '0')}.</span>
         <span class="jcard-track-name">${escapeHtml(track.name || 'Track ' + (i + 1))}</span>
       </div>
@@ -6337,6 +6469,7 @@ function buildJcardPlaylist() {
 }
 
 function playJcardTrack(i) {
+  musicAutoplayAttempted = true; removeMusicAutoplayListeners();
   if (isEjected) {
     toggleEject();
     setTimeout(() => {
@@ -6494,30 +6627,24 @@ function renderMusicTrackList() {
 }
 
 async function moveMusicTrack(index, direction) {
-  const targetIndex = index + direction;
-  if (targetIndex < 0 || targetIndex >= playlist.length) return;
-
-  const temp = playlist[index];
-  playlist[index] = playlist[targetIndex];
-  playlist[targetIndex] = temp;
-
-  if (currentTrack === index) {
-    currentTrack = targetIndex;
-  } else if (currentTrack === targetIndex) {
-    currentTrack = index;
-  }
-
-  renderMusicTrackList();
-
+  const items = playlist;
+  const target = index + direction;
+  if (target < 0 || target >= items.length) return;
+  const before = items.slice();
+  const activeId = playlist[currentTrack]?.id;
+  [items[index], items[target]] = [items[target], items[index]];
   try {
-    const promises = playlist.map((item, idx) => {
-      return supabaseClient.from('music_tracks').update({ sort_order: idx }).eq('id', item.id);
-    });
-    const results = await Promise.all(promises);
-    const failed = results.find(r => r.error);
-    if (failed) console.error('Failed to save track sort orders:', failed.error);
-  } catch (err) {
-    console.error('Failed to save track sort orders:', err);
+    await persistOrder('music_tracks', items);
+    showAdminToast('Order saved');
+  } catch (error) {
+    items.splice(0, items.length, ...before);
+    try { await persistOrder('music_tracks', before); }
+    catch { showAdminToast('Order could not be restored. Reload before editing again.'); throw error; }
+    showAdminToast('Order was not saved. Please try again.');
+  } finally {
+    const selected = playlist.findIndex(t => t.id === activeId);
+    if (selected >= 0) currentTrack = selected;
+    renderMusicTrackList(); buildJcardPlaylist(); saveMusicState();
   }
 }
 async function removeTrack(i) {
@@ -6527,32 +6654,47 @@ async function removeTrack(i) {
     const { error } = await supabaseClient.from('music_tracks').delete().eq('id', track.id);
     if (error) { showDataError('Track delete', error); return; }
   }
-  if (track.audio_path) await supabaseClient.storage.from('music').remove([track.audio_path]);
-  playlist.splice(i, 1);
-  renderMusicTrackList();
-  if (playlist.length) loadTrack(0);
-  showAdminToast('Track removed');
+  const activeId = playlist[currentTrack]?.id;
+  const cleanupOk = await removeStoredFile('music', track.audio_path);
+  playlist.splice(playlist.indexOf(track), 1);
+  if (!playlist.length) {
+    pauseCurrentTrack();
+    const audio = document.getElementById('bg-audio');
+    audio.removeAttribute('src'); audio.load();
+    currentTrack = 0;
+    document.getElementById('music-label').textContent = 'No Tracks';
+    document.getElementById('track-info').textContent = '';
+    document.getElementById('seek-slider').value = 0;
+    document.getElementById('current-time').textContent = '0:00';
+    document.getElementById('total-time').textContent = '0:00';
+    try { localStorage.removeItem(MUSIC_STATE_KEY); } catch {}
+  } else {
+    const active = playlist.findIndex(t => t.id === activeId);
+    if (active >= 0) currentTrack = active;
+    else loadTrack(Math.min(i, playlist.length-1));
+    saveMusicState();
+  }
+  renderMusicTrackList(); buildJcardPlaylist(); syncHifiTapeState();
+  showAdminToast(cleanupOk ? 'Track removed' : 'Track removed; file cleanup failed. Retry cleanup in admin.');
 }
 
 let pendingMusicData = null;
 function previewMusicFile(input) {
-  const file = input.files[0];
+  const file = input.files[0]; input.value = '';
   if (!file) return;
+  if (!file.type.startsWith('audio/') || file.size > 50 * 1024 * 1024) {
+    showAdminToast('Choose an audio file smaller than 50 MB.'); return;
+  }
   pendingMusicFile = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    pendingMusicData = { src: e.target.result, name: file.name.replace(/\.[^.]+$/, '') };
-    document.getElementById('a-music-name').value = pendingMusicData.name;
-    document.getElementById('music-upload-area').style.display = 'none';
-    document.getElementById('music-caption-area').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-  input.value = '';
+  pendingMusicData = {name: file.name.replace(/\.[^.]+$/, '')};
+  document.getElementById('a-music-name').value = pendingMusicData.name;
+  document.getElementById('music-upload-area').style.display = 'none';
+  document.getElementById('music-caption-area').style.display = 'block';
 }
 async function addMusicToPlaylist() {
   if (!pendingMusicData || !pendingMusicFile) return;
   const name = document.getElementById('a-music-name').value.trim() || pendingMusicData.name;
-  const path = `tracks/${Date.now()}-${pendingMusicFile.name.replace(/[^a-z0-9._-]/gi, '-')}`;
+  const path = `tracks/${crypto.randomUUID()}-${pendingMusicFile.name.replace(/[^a-z0-9._-]/gi, '-')}`;
   const upload = await supabaseClient.storage.from('music').upload(path, pendingMusicFile, { upsert: false });
   if (upload.error) { showDataError('Music upload', upload.error); return; }
   const insert = await supabaseClient.from('music_tracks').insert({
@@ -6560,7 +6702,7 @@ async function addMusicToPlaylist() {
     audio_path: path,
     sort_order: playlist.length
   }).select().single();
-  if (insert.error) { showDataError('Track save', insert.error); return; }
+  if (insert.error) { await removeStoredFile('music', path); showDataError('Track save', insert.error); return; }
   playlist.push({ id: insert.data.id, audio_path: path, src: getPublicUrl('music', path), name });
   pendingMusicData = null;
   pendingMusicFile = null;
@@ -6578,13 +6720,14 @@ function cancelMusicUpload() {
 async function addMusicTrackRow() {
   const url = prompt('Paste audio URL:');
   if (!url) return;
+  if (!safeMediaUrl(url) || !/^https:\/\//i.test(url)) { showAdminToast('Use a valid HTTPS audio URL.'); return; }
   const name = prompt('Track name (optional):') || 'Track';
   const insert = await supabaseClient.from('music_tracks').insert({
     name,
     audio_path: url,
     sort_order: playlist.length
   }).select().single();
-  if (insert.error) { showDataError('Track save', insert.error); return; }
+  if (insert.error) { await removeStoredFile('music', path); showDataError('Track save', insert.error); return; }
   playlist.push({ id: insert.data.id, audio_path: url, src: url, name });
   if (playlist.length === 1) loadTrack(0);
   renderMusicTrackList();
@@ -6609,5 +6752,6 @@ document.getElementById('poem-reader-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('poem-reader-overlay')) closePoemReader();
 });
 </script>
+<script src="reliability.js"></script>
 </body>
 </html>

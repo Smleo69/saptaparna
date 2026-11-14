@@ -1,91 +1,40 @@
-# Publish This Site On GitHub Pages
+# Saptaparna website
 
-This folder is the deploy-ready version of the site.
+This directory is the authoritative deployable site. The parent `for-you-monsoon.html` is an old prototype.
 
-Upload the CONTENTS of this `github-pages` folder to a GitHub repository:
+## Preview before publishing
+
+From the project root:
+
+```sh
+python3 -m http.server 4173 --bind 127.0.0.1 --directory github-pages
+```
+
+Open http://localhost:4173. This preview uses the same Supabase project as production: admin saves affect real content. Automated mutation tests use a mocked backend instead.
+
+Check the intro, all six panels, photo/poem readers, long letter scrolling, cassette and expanded player, and mobile layout. Review local changes before publishing.
+
+## Content and admin
+
+Gallery, poems, letter, and music are managed through the Supabase-backed admin panel. Open `?admin` or use the keyboard shortcut. Use **Sign out** to end the session; closing the panel leaves the session signed in. **Retry file cleanup** retries failed storage deletions recorded in this browser.
+
+The site currently permits public viewing. Admin authentication controls writes. No secrets belong in frontend files.
+
+## Deployment contents
+
+Publish the contents of this directory together, including:
 
 - `index.html`
+- `reliability.js`
 - `.nojekyll`
-- `assets/`
+- `assets/`, including `assets/vendor/` and the new footer WebP
 
-Do not upload the parent folder itself as the website root unless you configure GitHub Pages to use that folder.
+Do not publish the parent directory, backups, tests, or project context. No Supabase migration is required for the current local fixes. GitHub Pages uses the main branch, root folder.
 
-## Add Real Photos
+## Backups and checks
 
-1. Put photos in `assets/photos/`.
-2. Open `index.html`.
-3. Find `const defaultGallery = [`.
-4. Replace image paths and captions:
+Dated backups are in the parent `backups/` folder; `LATEST.txt` identifies the pre-fix snapshot. See its README for restoration. It is a local file backup, not a Supabase data export.
 
-```js
-const defaultGallery = [
-  {
-    src: "assets/photos/photo-1.jpg",
-    cap: "Write the memory note for this photo here."
-  }
-];
-```
+`python3 tests/build-browser-check.py` from the project root creates a temporary browser harness with mocked Supabase calls. It never performs live database writes. Open `/tmp/saptaparna-fixes-check.html` in Chromium to inspect the results.
 
-## Add Poems
-
-Find `const defaultPoems = [];` and replace it with:
-
-```js
-const defaultPoems = [
-  {
-    id: 1,
-    title: "Poem title",
-    date: "2026-05-24",
-    content: `Your poem text here.
-Line two here.`
-  }
-];
-```
-
-## Add The Letter
-
-Find `const defaultLetter = "";` and replace it with:
-
-```js
-const defaultLetter = `My dearest,
-
-Write your letter here.`;
-```
-
-## Add Surprise Messages
-
-Find `const defaultSurprises = [` and edit the messages.
-
-## Add Music
-
-Put songs in `assets/music/`, then find `const defaultPlaylist = [];` and replace it with:
-
-```js
-const defaultPlaylist = [
-  {
-    src: "assets/music/song-1.mp3",
-    name: "Song name"
-  }
-];
-```
-
-## GitHub Pages Steps
-
-1. Create a new GitHub repository.
-2. Upload the contents of this folder.
-3. Go to repository `Settings`.
-4. Go to `Pages`.
-5. Source: `Deploy from a branch`.
-6. Branch: `main`.
-7. Folder: `/root`.
-8. Save.
-
-GitHub will give you a link like:
-
-`https://your-username.github.io/repository-name/`
-
-## About Code Privacy
-
-Visitors cannot change your live site unless they have access to your GitHub account or repository.
-
-They can still view/copy frontend HTML/CSS/JS because browsers need that code to show the page. That is normal for static websites.
+Dependencies are committed locally under `assets/vendor/`. Review and test an explicit replacement when updating; the page no longer loads a floating Supabase script from a CDN.
