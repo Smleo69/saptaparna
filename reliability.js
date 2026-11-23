@@ -24,7 +24,11 @@ function syncDialogs() {
   }
   const top = dialogStack.at(-1);
   document.body.style.overflow = top ? 'hidden' : '';
-  document.getElementById('panel-stack').inert = Boolean(top);
+  const panelStack = document.getElementById('panel-stack');
+  if (panelStack.inert !== Boolean(top)) {
+    panelStack.inert = Boolean(top);
+    window.dispatchEvent(new Event('saptaparna:rain-visibility-check'));
+  }
   document.getElementById('music-player').inert = Boolean(top);
   for (const id of dialogIds) {
     const el = document.getElementById(id);
