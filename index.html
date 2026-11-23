@@ -4611,7 +4611,6 @@ function initPanelStack() {
   pointerShield.hidden = true;
   pointerShield.setAttribute('aria-hidden', 'true');
   viewportEl.appendChild(pointerShield);
-  const previewBlur = new URLSearchParams(window.location.search).get('blur') === '1';
 
   panels.forEach((panel, index) => {
     panel.dataset.stackIndex = String(index);
@@ -4702,7 +4701,6 @@ function initPanelStack() {
       lastActiveIndex = activeIndex;
     }
 
-    const canBlur = previewBlur && !isMobile;
     let outgoingPanel, outgoingBlur;
     let shieldTransform, shieldRadius;
     let galleryCovered = false;
@@ -4742,7 +4740,7 @@ function initPanelStack() {
         shadow = 0.24 * (1 - exit);
         outline = 0.08 * exit;
         z = 200 + index;
-        if (canBlur && index < panels.length - 1 && !stack.inert) {
+        if (!isMobile && index < panels.length - 1 && !stack.inert) {
           const blur = Math.round(12 * ease(clamp(delta / 0.78, 0, 1))) / 4;
           if (blur > 0) {
             outgoingPanel = panel;
